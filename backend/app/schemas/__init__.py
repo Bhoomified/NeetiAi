@@ -27,4 +27,5 @@ class TransactionRead(BaseModel):
     merchant_raw: str
     amount: float
     category: Optional[str]
+    confidence_score: Optional[float]   # NEW
     date: datetime

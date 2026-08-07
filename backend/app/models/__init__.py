@@ -15,12 +15,12 @@ class User(SQLModel, table=True):
 class Transaction(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    merchant_raw: str          # messy raw string, e.g. "SWIGGY*ORDER123"
+    merchant_raw: str
     amount: float
-    category: Optional[str] = None   # filled by categorization model
+    category: Optional[str] = None
+    confidence_score: Optional[float] = None   # NEW
     date: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
 
 class Budget(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

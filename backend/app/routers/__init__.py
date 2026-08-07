@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User, Transaction
 from app.schemas import UserCreate, UserRead, TransactionCreate, TransactionRead
-from app.ml_stub import categorize_transaction
+from app.ml_categorizer import categorize_transaction
 
 router = APIRouter()
 
@@ -27,12 +27,13 @@ def get_user(user_id: int, session: Session = Depends(get_session)):
 
 @router.post("/transactions", response_model=TransactionRead)
 def create_transaction(tx: TransactionCreate, session: Session = Depends(get_session)):
-    category = categorize_transaction(tx.merchant_raw)
+    category, confidence = categorize_transaction(tx.merchant_raw, tx.amount)
     db_tx = Transaction(
         user_id=tx.user_id,
         merchant_raw=tx.merchant_raw,
         amount=tx.amount,
         category=category,
+        confidence_score=confidence,   # NEW
     )
     session.add(db_tx)
     session.commit()
