@@ -1,14 +1,13 @@
-"""
-Expense categorization service.
-
-v2 model needs BOTH merchant_raw text AND amount to predict —
-amount improved separation for price-distinctive categories
-like rent/recharge (see notebook results: F1 0.9459 vs 0.9294 text-only).
-"""
 import os
+import sys
 import joblib
+from app.ml.model_classes import TextAmountXGBWrapper, clean_text  # noqa: F401
 
 ARTIFACT_PATH = os.path.join(os.path.dirname(__file__), "ml", "artifacts", "categorizer.pkl")
+
+# Register the class under __main__ so joblib's unpickler can resolve it —
+# the pickle was saved from a notebook where this class lived in __main__
+sys.modules["__main__"].TextAmountXGBWrapper = TextAmountXGBWrapper
 
 _KEYWORD_MAP = {
     "food": ["swiggy", "zomato", "dominos", "mess", "canteen", "restaurant"],
@@ -23,17 +22,17 @@ _KEYWORD_MAP = {
 _model = None
 if os.path.exists(ARTIFACT_PATH):
     _model = joblib.load(ARTIFACT_PATH)
+    print(f"✅ Loaded trained categorizer from {ARTIFACT_PATH}")
+else:
+    print(f"⚠️  No trained model found at {ARTIFACT_PATH} — using keyword fallback")
 
 
 def categorize_transaction(merchant_raw: str, amount: float) -> tuple[str, float]:
-    """Returns (category, confidence_score). Keeps your original function name
-    so the router call site barely changes."""
     if _model is not None:
         pred = _model.predict([merchant_raw], [amount])[0]
         proba = _model.predict_proba([merchant_raw], [amount]).max()
         return pred, float(proba)
 
-    # Fallback — only hit if categorizer.pkl is missing
     text = merchant_raw.lower()
     for category, keywords in _KEYWORD_MAP.items():
         if any(kw in text for kw in keywords):
