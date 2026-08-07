@@ -124,9 +124,10 @@ exercise.
 ✅ Categorization stub live (rule-based, temporary)
 ✅ Full loop working: add transaction → auto-categorize → display
 ✅ CORS configured for local dev
+✅ Categorization model v2 live in production: tuned XGBoost + amount feature (F1 0.9459)
+✅ Resolved model deployment issues: pickled class resolution, dependency mismatch, sklearn version drift between Colab training and local serving
 
-🔜 Synthetic data generator (Colab) — realistic noisy transaction data
-🔜 Real ML categorization model trained on that data
+
 🔜 Budgeting module
 🔜 Investment tracking module
 🔜 Chat assistant over financial data
