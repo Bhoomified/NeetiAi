@@ -120,11 +120,17 @@ exercise.
 ## Status
 
 ✅ Repo + backend + frontend scaffolded
+
 ✅ Database schema defined (SQLite, dev mode)
+
 ✅ Categorization stub live (rule-based, temporary)
+
 ✅ Full loop working: add transaction → auto-categorize → display
+
 ✅ CORS configured for local dev
+
 ✅ Categorization model v2 live in production: tuned XGBoost + amount feature (F1 0.9459)
+
 ✅ Resolved model deployment issues: pickled class resolution, dependency mismatch, sklearn version drift between Colab training and local serving
 
 
