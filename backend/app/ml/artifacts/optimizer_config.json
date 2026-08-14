@@ -1,0 +1,13 @@
+{
+  "default_weights": {
+    "rent": 10,
+    "education": 6,
+    "recharge": 5,
+    "food": 5,
+    "transport": 4,
+    "misc": 2,
+    "shopping": 1,
+    "entertainment": 1
+  },
+  "min_pct_of_predicted": 0.5
+}
