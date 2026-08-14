@@ -1,0 +1,75 @@
+{
+  "total_model": {
+    "mae": 6039.76,
+    "naive_mae": 8164.98,
+    "improvement_over_naive_%": 26.0
+  },
+  "category_models": {
+    "misc": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 488.5,
+      "naive_mae": 547.09,
+      "beats_naive": true
+    },
+    "shopping": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 1029.41,
+      "naive_mae": 1180.77,
+      "beats_naive": true
+    },
+    "education": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 767.25,
+      "naive_mae": 983.82,
+      "beats_naive": true
+    },
+    "food": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 316.77,
+      "naive_mae": 379.88,
+      "beats_naive": true
+    },
+    "recharge": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 326.71,
+      "naive_mae": 481.39,
+      "beats_naive": true
+    },
+    "entertainment": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 310.71,
+      "naive_mae": 331.0,
+      "beats_naive": true
+    },
+    "rent": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 3859.23,
+      "naive_mae": 5748.09,
+      "beats_naive": true
+    },
+    "transport": {
+      "method": "random_forest",
+      "n_rows": 630,
+      "mae": 333.02,
+      "naive_mae": 342.29,
+      "beats_naive": true
+    }
+  },
+  "feature_cols": [
+    "lag_1",
+    "lag_2",
+    "lag_3",
+    "lag_4",
+    "rolling_mean_4",
+    "week_of_month",
+    "is_first_week"
+  ],
+  "resolution": "weekly"
+}
