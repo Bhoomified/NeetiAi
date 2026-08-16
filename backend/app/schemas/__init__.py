@@ -13,6 +13,7 @@ class UserRead(BaseModel):
     uuid: str
     name: str
     email: str
+    monthly_income: float
 
 
 class TransactionCreate(BaseModel):
@@ -29,3 +30,44 @@ class TransactionRead(BaseModel):
     category: Optional[str]
     confidence_score: Optional[float]   # NEW
     date: datetime
+
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    monthly_income: float = 0.0     # NEW
+
+
+class ForecastCategoryPrediction(BaseModel):
+    category: str
+    predicted_amount: float
+    method: str   # "random_forest" or "rolling_average_fallback"
+
+
+class ForecastRead(BaseModel):
+    user_id: int
+    weeks_of_history: int
+    predicted_total: float
+    total_method: str
+    categories: list[ForecastCategoryPrediction]
+
+
+class BudgetOptimizeRequest(BaseModel):
+    user_id: int
+    savings_target_pct: float          # user-set, e.g. 0.15 for 15% — REQUIRED, no default baked in
+    weekly_income: Optional[float] = None   # if omitted, derived from user.monthly_income / 4.33
+    category_weights: Optional[dict[str, float]] = None   # optional override of default priorities
+
+
+class BudgetAllocation(BaseModel):
+    category: str
+    predicted_amount: float
+    budget_cap: float
+    cut_percent: float
+
+
+class BudgetOptimizeResponse(BaseModel):
+    weekly_income: float
+    savings_target: float
+    projected_savings: float
+    target_met: bool
+    allocations: list[BudgetAllocation]

@@ -9,6 +9,7 @@ class User(SQLModel, table=True):
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()), unique=True)
     name: str
     email: str = Field(unique=True)
+    monthly_income: float = 0.0
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -18,9 +19,10 @@ class Transaction(SQLModel, table=True):
     merchant_raw: str
     amount: float
     category: Optional[str] = None
-    confidence_score: Optional[float] = None   # NEW
+    confidence_score: Optional[float] = None
     date: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 class Budget(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -33,7 +35,7 @@ class Budget(SQLModel, table=True):
 class ChatLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    role: str            # "user" or "assistant"
+    role: str
     message: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
