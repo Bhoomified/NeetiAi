@@ -133,8 +133,12 @@ exercise.
 
 ✅ Resolved model deployment issues: pickled class resolution, dependency mismatch, sklearn version drift between Colab training and local serving
 
+✅ Weekly spend forecasting live (Random Forest, beats naive baseline 8-33% across categories)
 
-🔜 Budgeting module
+✅ Budget optimizer live (SLSQP, priority-weighted, user-set savings target per request)
+
+✅ Full pipeline tested end-to-end: transaction → categorization → forecast → optimized budget
+
 🔜 Investment tracking module
 🔜 Chat assistant over financial data
 
