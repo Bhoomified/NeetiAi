@@ -13,12 +13,12 @@ import random
 import joblib
 
 try:
-    import torch
+    import torch # type: ignore
 except ImportError:
     torch = None
 
 try:
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification # type: ignore
 except ImportError:
     AutoTokenizer = None
     AutoModelForSequenceClassification = None
