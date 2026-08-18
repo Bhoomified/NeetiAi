@@ -8,8 +8,7 @@ __pycache__/
 node_modules/
 .next/
 
-# Large ML model binaries — too big for git, kept local only
-backend/app/ml/artifacts/distilbert_intent/
+
 
 # OS
 .DS_Store
