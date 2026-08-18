@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+
 from fastapi import APIRouter, Depends, HTTPException # type: ignore
 from sqlmodel import Session, select # type: ignore
 from app.database import get_session
@@ -7,6 +9,9 @@ from app.ml_categorizer import categorize_transaction
 from app.ml_forecast import forecast_user
 from app.ml_optimizer import optimize_budget
 from app.schemas import ForecastRead, BudgetOptimizeRequest, BudgetOptimizeResponse
+from app.ml_chatbot import chat as chatbot_chat
+from app.models import ChatLog
+
 router = APIRouter()
 
 
@@ -83,4 +88,30 @@ def budget_optimize(payload: BudgetOptimizeRequest, session: Session = Depends(g
     )
     if error:
         raise HTTPException(status_code=400, detail=error)
+    return result
+
+class ChatRequest(BaseModel):
+    user_id: int
+    message: str
+
+@router.post("/chat")
+def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session)):
+    # Pull real backend data relevant to likely intents — e.g. this week's forecast —
+    # so template responses use ACTUAL numbers, never invented ones
+    user_transactions = session.exec(select(Transaction).where(Transaction.user_id == payload.user_id)).all()
+
+    backend_data = None
+    if user_transactions:
+        recent_amount = sum(t.amount for t in user_transactions[-5:])  # simple recent-spend context for now
+        recent_category = user_transactions[-1].category
+        backend_data = {"amount": recent_amount, "category": recent_category}
+
+    result = chatbot_chat(payload.message, backend_data=backend_data)
+
+    log = ChatLog(user_id=payload.user_id, role="user", message=payload.message)
+    session.add(log)
+    log2 = ChatLog(user_id=payload.user_id, role="assistant", message=result["response"])
+    session.add(log2)
+    session.commit()
+
     return result
