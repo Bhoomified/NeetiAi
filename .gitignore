@@ -8,7 +8,7 @@ __pycache__/
 node_modules/
 .next/
 
-
+.env
 
 # OS
 .DS_Store
