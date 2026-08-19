@@ -11,6 +11,9 @@ from app.ml_optimizer import optimize_budget
 from app.schemas import ForecastRead, BudgetOptimizeRequest, BudgetOptimizeResponse
 from app.ml_chatbot import chat as chatbot_chat
 from app.models import ChatLog
+from app.ml_investments import classify_risk_profile, fetch_fund_nav_history, detect_opportunity
+from app.models import InvestmentWatchlist
+from app.schemas import RiskQuizRequest, WatchlistCreate, WatchlistRead
 
 
 router = APIRouter()
@@ -148,3 +151,60 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
     session.commit()
 
     return result
+
+@router.post("/investments/risk-profile")
+def risk_profile(payload: RiskQuizRequest):
+    profile = classify_risk_profile(
+        payload.age_score, payload.income_stability, payload.investment_horizon,
+        payload.loss_reaction, payload.existing_savings_months,
+    )
+    return {"risk_profile": profile}
+
+
+@router.post("/investments/watchlist", response_model=WatchlistRead)
+def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_session)):
+    entry = InvestmentWatchlist(user_id=payload.user_id, symbol=payload.symbol, note=payload.note)
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return entry
+
+
+@router.post("/investments/watchlist", response_model=WatchlistRead)
+def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_session)):
+    existing = session.exec(
+        select(InvestmentWatchlist).where(
+            InvestmentWatchlist.user_id == payload.user_id,
+            InvestmentWatchlist.symbol == payload.symbol,
+        )
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="This fund is already on your watchlist.")
+
+    entry = InvestmentWatchlist(user_id=payload.user_id, symbol=payload.symbol, note=payload.note)
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return entry
+
+
+@router.get("/investments/opportunities/{user_id}")
+async def check_opportunities(user_id: int, session: Session = Depends(get_session)):
+    watchlist = session.exec(select(InvestmentWatchlist).where(InvestmentWatchlist.user_id == user_id)).all()
+    if not watchlist:
+        return {"opportunities": [], "note": "No funds on your watchlist yet."}
+
+    results = []
+    for entry in watchlist:
+        try:
+            nav_history, meta = await fetch_fund_nav_history(entry.symbol)
+            signal = detect_opportunity(nav_history)
+            results.append({
+                "symbol": entry.symbol,
+                "fund_name": meta.get("scheme_name", "Unknown"),
+                "signal": signal,
+            })
+        except Exception as e:
+            results.append({"symbol": entry.symbol, "error": f"Could not fetch data: {e}"})
+
+    return {"opportunities": results}

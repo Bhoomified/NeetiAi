@@ -71,3 +71,23 @@ class BudgetOptimizeResponse(BaseModel):
     projected_savings: float
     target_met: bool
     allocations: list[BudgetAllocation]
+
+class RiskQuizRequest(BaseModel):
+    age_score: int        # 1-5
+    income_stability: int  # 1-5
+    investment_horizon: int  # 1-5
+    loss_reaction: int      # 1-5
+    existing_savings_months: int  # 1-5
+
+
+class WatchlistCreate(BaseModel):
+    user_id: int
+    symbol: str          # mfapi.in scheme code, e.g. "119551"
+    note: Optional[str] = None
+
+
+class WatchlistRead(BaseModel):
+    id: int
+    user_id: int
+    symbol: str
+    note: Optional[str]

@@ -33,3 +33,4 @@ transformers==5.15.0
 torch==2.13.0
 transformers==5.15.0
 huggingface_hub==1.28.0
+httpx @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_cc4egw1482/croot/httpx_1723474826664/work
