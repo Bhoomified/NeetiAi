@@ -140,7 +140,8 @@ exercise.
 ✅ Full pipeline tested end-to-end: transaction → categorization → forecast → optimized budget
 
 ✅ Chatbot live: DistilBERT intent classifier (F1 0.9707) + spaCy/regex entity extraction + template engine + optional HuggingFace rephrase layer (Qwen2.5-7B) with number-integrity safety checks
-🔜 Investment tracking module
+
+✅ Investment module live: risk profiling classifier, live mutual fund NAV tracking (mfapi.in), statistical opportunity detection
 
 
 ---
