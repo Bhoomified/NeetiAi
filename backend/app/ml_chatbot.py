@@ -11,6 +11,7 @@ import os
 import re
 import random
 import joblib
+from app.ml_rephrase import safe_rephrase
 
 try:
     import torch # type: ignore
@@ -161,4 +162,6 @@ def chat(user_message: str, backend_data: dict = None) -> dict:
         "timeframe": extract_timeframe(user_message),
     }
     response = generate_response(intent, entities, backend_data)
+    response = safe_rephrase(response)   # both assignment steps now guaranteed to run in sequence
+
     return {"intent": intent, "confidence": round(confidence, 3), "entities": entities, "response": response}
