@@ -8,6 +8,7 @@ export default function Nav() {
           <a href="/dashboard" className="hover:text-forest transition-colors duration-200 ease-out">Dashboard</a>
           <a href="/budget" className="hover:text-forest transition-colors duration-200 ease-out">Budget</a>
           <a href="/chat" className="hover:text-forest transition-colors duration-200 ease-out">Chat</a>
+          <a href="/investments" className="hover:text-forest transition-colors duration-200 ease-out whitespace-nowrap">Investments</a>
         </div>
         <a
           href="/dashboard"
