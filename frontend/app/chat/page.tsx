@@ -45,7 +45,7 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-base flex flex-col">
+    <main className="min-h-screen bg-paper flex flex-col">
       <Nav />
 
       <div className="max-w-2xl w-full mx-auto px-6 sm:px-8 pt-8 pb-4 flex-1 flex flex-col">

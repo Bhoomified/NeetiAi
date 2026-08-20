@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
-      <body className="bg-base text-ink font-sans antialiased">{children}</body>
+      <body className="bg-paper text-ink font-sans antialiased">{children}</body>
     </html>
   );
 }

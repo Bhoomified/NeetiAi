@@ -126,7 +126,7 @@ export default function InvestmentsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-base pb-24">
+    <main className="min-h-screen bg-paper pb-24">
       <Nav />
 
       <div className="max-w-4xl mx-auto px-6 sm:px-8 pt-12 space-y-10">

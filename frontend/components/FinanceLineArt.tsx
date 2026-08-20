@@ -9,8 +9,7 @@ export default function FinanceLineArt() {
     const handleScroll = () => {
       if (!containerRef.current) return;
       const scrolled = window.scrollY;
-      const layers = containerRef.current.querySelectorAll<HTMLElement>("[data-depth]");
-      layers.forEach((layer) => {
+      containerRef.current.querySelectorAll<HTMLElement>("[data-depth]").forEach((layer) => {
         const depth = parseFloat(layer.dataset.depth || "0.1");
         layer.style.transform = `translateY(${scrolled * depth}px)`;
       });
@@ -21,69 +20,58 @@ export default function FinanceLineArt() {
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {/* Ambient contrast blob — forest green wash, upper right, gives the "movable stack" scene a base */}
-      <div
-        data-depth="0.06"
-        className="absolute -right-32 -top-20 w-[32rem] h-[32rem] rounded-full opacity-[0.07] animate-drift-slow"
-        style={{ background: "radial-gradient(circle, #183630 0%, transparent 70%)" }}
-      />
-      <div
-        data-depth="0.1"
-        className="absolute -left-40 top-[30%] w-[28rem] h-[28rem] rounded-full opacity-[0.06] animate-drift"
-        style={{ background: "radial-gradient(circle, #C9A15E 0%, transparent 70%)" }}
-      />
-
-      {/* Hourglass echo, upper right */}
-      <svg data-depth="0.08" className="absolute right-[6%] top-24 w-56 h-56 opacity-[0.16] animate-drift-slow" viewBox="0 0 200 200" fill="none">
-        <path d="M60 30 L140 30 Q140 30 140 45 L100 100 L140 155 Q140 170 140 170 L60 170 Q60 170 60 155 L100 100 L60 45 Q60 30 60 30 Z"
-          stroke="#C9A15E" strokeWidth="1.5" strokeLinejoin="round" />
+      {/* Piggy bank, upper right */}
+      <svg data-depth="0.08" className="absolute right-[4%] top-28 w-52 h-52 opacity-[0.3] animate-drift-slow" viewBox="0 0 200 200" fill="none">
+        <ellipse cx="100" cy="110" rx="70" ry="50" stroke="#183630" strokeWidth="1.8" />
+        <path d="M60 75 Q 45 55, 55 45 Q 65 50, 65 65" stroke="#183630" strokeWidth="1.8" fill="none" />
+        <circle cx="130" cy="100" r="6" fill="#C9A15E" />
+        <rect x="85" y="60" width="30" height="6" rx="3" stroke="#6B2E2A" strokeWidth="1.5" />
+        <line x1="100" y1="158" x2="100" y2="170" stroke="#183630" strokeWidth="1.8" />
+        <line x1="70" y1="158" x2="70" y2="170" stroke="#183630" strokeWidth="1.8" />
       </svg>
 
-      {/* Growth curve, mid-left */}
-      <svg data-depth="0.15" className="absolute left-[-4%] top-[38%] w-96 h-64 opacity-[0.14]" viewBox="0 0 400 200" fill="none">
-        <path d="M10 170 C 60 160, 90 150, 120 130 S 180 90, 220 95 S 280 60, 320 40 S 370 15, 390 10"
-          stroke="#183630" strokeWidth="2" strokeLinecap="round" fill="none" />
-        <circle cx="390" cy="10" r="3" fill="#C9A15E" />
+      {/* Growth arrow zigzag, mid-left */}
+      <svg data-depth="0.15" className="absolute left-[-3%] top-[35%] w-80 h-48 opacity-[0.28]" viewBox="0 0 300 160" fill="none">
+        <path d="M10 140 L 70 60 L 120 100 L 180 30 L 240 70 L 290 15" stroke="#183630" strokeWidth="2" fill="none" strokeLinejoin="round" />
+        <path d="M270 10 L 290 15 L 282 32" stroke="#183630" strokeWidth="2" fill="none" strokeLinejoin="round" />
+        <circle cx="120" cy="100" r="3.5" fill="#C9A15E" />
+        <circle cx="180" cy="30" r="3.5" fill="#C9A15E" />
       </svg>
 
-      {/* Floating winged money note — signature element */}
-      <svg data-depth="0.12" className="absolute right-[18%] top-[55%] w-40 h-40 opacity-[0.15] animate-drift" viewBox="0 0 200 200" fill="none">
-        <rect x="60" y="70" width="90" height="55" rx="4" stroke="#6B2E2A" strokeWidth="1.5" />
-        <circle cx="105" cy="97" r="14" stroke="#6B2E2A" strokeWidth="1.2" />
-        <path d="M60 85 Q 30 75, 15 55 Q 10 45, 20 48 Q 40 55, 60 85" stroke="#C9A15E" strokeWidth="1.3" fill="none" />
-        <path d="M150 85 Q 180 75, 195 55 Q 200 45, 190 48 Q 170 55, 150 85" stroke="#C9A15E" strokeWidth="1.3" fill="none" />
+      {/* Hands exchanging money, mid-right */}
+      <svg data-depth="0.12" className="absolute right-[14%] top-[52%] w-40 h-40 opacity-[0.3] animate-drift" viewBox="0 0 200 200" fill="none">
+        <path d="M40 60 L 90 90 L 95 100 Q 90 110, 80 105 L 40 80" stroke="#6B2E2A" strokeWidth="1.8" fill="none" />
+        <path d="M160 140 L 110 110 L 105 100 Q 110 90, 120 95 L 160 120" stroke="#183630" strokeWidth="1.8" fill="none" />
+        <rect x="85" y="85" width="45" height="28" rx="3" stroke="#C9A15E" strokeWidth="1.8" transform="rotate(15 100 100)" />
+      </svg>
+
+      {/* Receipt, lower left */}
+      <svg data-depth="0.1" className="absolute left-[6%] bottom-[14%] w-32 h-40 opacity-[0.28] animate-drift-slow" viewBox="0 0 120 160" fill="none">
+        <path d="M20 10 H100 V140 L90 150 L80 140 L70 150 L60 140 L50 150 L40 140 L30 150 L20 140 Z" stroke="#183630" strokeWidth="1.6" fill="none" />
+        <line x1="35" y1="35" x2="85" y2="35" stroke="#6B2E2A" strokeWidth="1.4" />
+        <line x1="35" y1="55" x2="85" y2="55" stroke="#6B2E2A" strokeWidth="1.4" />
+        <line x1="35" y1="75" x2="70" y2="75" stroke="#6B2E2A" strokeWidth="1.4" />
+        <text x="60" y="105" fontSize="20" fill="#C9A15E" textAnchor="middle">₹</text>
       </svg>
 
       {/* Coin stack, lower right */}
-      <svg data-depth="0.1" className="absolute right-[8%] bottom-[8%] w-40 h-40 opacity-[0.14] animate-drift-slow" viewBox="0 0 150 150" fill="none">
-        <ellipse cx="75" cy="120" rx="45" ry="12" stroke="#6B2E2A" strokeWidth="1.5" />
-        <ellipse cx="75" cy="105" rx="45" ry="12" stroke="#6B2E2A" strokeWidth="1.5" />
-        <ellipse cx="75" cy="90" rx="45" ry="12" stroke="#6B2E2A" strokeWidth="1.5" />
-        <ellipse cx="75" cy="75" rx="45" ry="12" stroke="#C9A15E" strokeWidth="1.5" />
+      <svg data-depth="0.1" className="absolute right-[8%] bottom-[8%] w-36 h-36 opacity-[0.3] animate-drift-slow" viewBox="0 0 150 150" fill="none">
+        <ellipse cx="75" cy="120" rx="45" ry="12" stroke="#6B2E2A" strokeWidth="1.6" />
+        <ellipse cx="75" cy="105" rx="45" ry="12" stroke="#6B2E2A" strokeWidth="1.6" />
+        <ellipse cx="75" cy="90" rx="45" ry="12" stroke="#6B2E2A" strokeWidth="1.6" />
+        <ellipse cx="75" cy="75" rx="45" ry="12" stroke="#C9A15E" strokeWidth="1.6" />
       </svg>
 
-      {/* Second coin stack, upper-left, smaller */}
-      <svg data-depth="0.14" className="absolute left-[10%] top-[12%] w-24 h-24 opacity-[0.13] animate-drift" viewBox="0 0 150 150" fill="none">
-        <ellipse cx="75" cy="120" rx="35" ry="9" stroke="#183630" strokeWidth="1.3" />
-        <ellipse cx="75" cy="107" rx="35" ry="9" stroke="#183630" strokeWidth="1.3" />
-        <ellipse cx="75" cy="94" rx="35" ry="9" stroke="#C9A15E" strokeWidth="1.3" />
+      {/* Hourglass, top area */}
+      <svg data-depth="0.06" className="absolute left-[42%] top-10 w-24 h-24 opacity-[0.25]" viewBox="0 0 200 200" fill="none">
+        <path d="M60 30 L140 30 Q140 30 140 45 L100 100 L140 155 Q140 170 140 170 L60 170 Q60 170 60 155 L100 100 L60 45 Q60 30 60 30 Z"
+          stroke="#183630" strokeWidth="1.8" strokeLinejoin="round" />
       </svg>
 
-      {/* Free-hand flourish underline */}
-      <svg data-depth="0.05" className="absolute left-[18%] top-[6%] w-48 h-16 opacity-[0.15]" viewBox="0 0 200 60" fill="none">
-        <path d="M5 40 Q 50 5, 100 30 T 195 20" stroke="#C9A15E" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      </svg>
-
-      {/* Gentle wave line, bottom, drifting horizontally */}
-      <svg
-        data-depth="0.03"
-        className="absolute bottom-0 left-0 w-[200%] h-24 opacity-[0.1] animate-wave"
-        viewBox="0 0 1600 100" fill="none"
-      >
-        <path
-          d="M0 50 Q 100 10, 200 50 T 400 50 T 600 50 T 800 50 T 1000 50 T 1200 50 T 1400 50 T 1600 50"
-          stroke="#183630" strokeWidth="1.5" fill="none"
-        />
+      {/* Wave line, bottom, flowing */}
+      <svg data-depth="0.03" className="absolute bottom-0 left-0 w-[200%] h-24 opacity-[0.2] animate-wave" viewBox="0 0 1600 100" fill="none">
+        <path d="M0 50 Q 100 10, 200 50 T 400 50 T 600 50 T 800 50 T 1000 50 T 1200 50 T 1400 50 T 1600 50"
+          stroke="#183630" strokeWidth="1.6" fill="none" />
       </svg>
     </div>
   );
