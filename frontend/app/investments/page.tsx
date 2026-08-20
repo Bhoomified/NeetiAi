@@ -242,7 +242,7 @@ export default function InvestmentsPage() {
               <p className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-ink-soft">searching…</p>
             )}
             {searchResults.length > 0 && (
-              <div className="absolute z-10 w-full mt-2 glass rounded-2xl overflow-hidden shadow-lg max-h-72 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-2 glass-solid rounded-2xl overflow-hidden shadow-lg max-h-72 overflow-y-auto">
                 {searchResults.map((r) => (
                   <button
                     key={r.schemeCode}

@@ -55,3 +55,31 @@ a:focus-visible, button:focus-visible {
   outline: 2px solid #183630;
   outline-offset: 2px;
 }
+
+.glass-solid {
+  background: #FBF8F1;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(201, 161, 94, 0.3);
+  box-shadow: 0 8px 30px rgba(26, 46, 31, 0.12);
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-18px) translateX(8px); }
+}
+@keyframes drift-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+@keyframes wave-flow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-drift { animation: drift 8s ease-in-out infinite; }
+.animate-drift-slow { animation: drift-slow 11s ease-in-out infinite; }
+.animate-wave { animation: wave-flow 20s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift, .animate-drift-slow, .animate-wave { animation: none !important; }
+}
