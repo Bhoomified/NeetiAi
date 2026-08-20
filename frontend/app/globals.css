@@ -66,31 +66,11 @@ a:focus-visible, button:focus-visible {
 
 @keyframes drift {
   0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(-18px) translateX(8px); }
+  50% { transform: translateY(-32px) translateX(16px); }
 }
 @keyframes drift-slow {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(2deg); }
-}
-@keyframes wave-flow {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-drift { animation: drift 8s ease-in-out infinite; }
-.animate-drift-slow { animation: drift-slow 11s ease-in-out infinite; }
-.animate-wave { animation: wave-flow 20s linear infinite; }
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-drift, .animate-drift-slow, .animate-wave { animation: none !important; }
-}
-
-@keyframes drift {
-  0%, 100% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(-18px) translateX(8px); }
-}
-@keyframes drift-slow {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(2deg); }
+  50% { transform: translateY(-22px) rotate(4deg); }
 }
 @keyframes wave-flow {
   0% { transform: translateX(0); }
@@ -100,9 +80,9 @@ a:focus-visible, button:focus-visible {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-drift { animation: drift 8s ease-in-out infinite; }
-.animate-drift-slow { animation: drift-slow 11s ease-in-out infinite; }
-.animate-wave { animation: wave-flow 20s linear infinite; }
+.animate-drift { animation: drift 6s ease-in-out infinite; }
+.animate-drift-slow { animation: drift-slow 8s ease-in-out infinite; }
+.animate-wave { animation: wave-flow 16s linear infinite; }
 
 .glass-solid {
   background: #FBF8F1;
@@ -111,6 +91,12 @@ a:focus-visible, button:focus-visible {
   border: 1px solid rgba(201, 161, 94, 0.3);
   box-shadow: 0 8px 30px rgba(26, 46, 31, 0.12);
 }
+
+/* Fix: dark green glass panels need light text by default */
+.glass-forest, .glass-forest p, .glass-forest span, .glass-forest h1, .glass-forest h2, .glass-forest h3 {
+  color: #F5F0E6;
+}
+.glass-forest .text-gold { color: #C9A15E; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-drift, .animate-drift-slow, .animate-wave { animation: none !important; }

@@ -12,6 +12,9 @@ const config: Config = {
         forest: "#183630",
         rust: "#6B2E2A",
         sage: "#8A9A83",
+        navy: "#1B2A44",
+        wine: "#5C1F2E",
+        olive: "#4A5320",
         hairline: "#D4CBB8",
       },
       fontFamily: {
