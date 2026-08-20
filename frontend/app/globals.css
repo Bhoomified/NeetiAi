@@ -2,26 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  scroll-behavior: smooth;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #F5F0E6;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* Restrained glassmorphism — cream/gold tinted, never white-on-black */
+.glass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 161, 94, 0.25);
+}
+
+.glass-forest {
+  background: rgba(24, 54, 48, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 161, 94, 0.3);
+}
+
+/* Bold black highlighting for key numbers/emphasis, as requested */
+.ink-strong {
+  color: #0D1710;
+  font-weight: 700;
+}
+
+.hairline {
+  border-color: #D4CBB8;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+}
+
+::selection {
+  background: #C9A15E;
+  color: #1A2E1F;
+}
+
+/* Focus visibility — accessibility floor */
+a:focus-visible, button:focus-visible {
+  outline: 2px solid #183630;
+  outline-offset: 2px;
 }
