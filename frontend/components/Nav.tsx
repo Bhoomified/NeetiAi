@@ -7,8 +7,8 @@ export default function Nav() {
           <a href="/#features" className="hover:text-forest transition-colors duration-200 ease-out">Features</a>
           <a href="/dashboard" className="hover:text-forest transition-colors duration-200 ease-out">Dashboard</a>
           <a href="/budget" className="hover:text-forest transition-colors duration-200 ease-out">Budget</a>
+          <a href="/chat" className="hover:text-forest transition-colors duration-200 ease-out">Chat</a>
         </div>
-        
         <a
           href="/dashboard"
           className="text-sm font-semibold px-5 py-2 rounded-full bg-forest
