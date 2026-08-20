@@ -24,6 +24,8 @@ type QuizState = {
   savingsMonths: number;
 };
 
+type FundSearchResult = { schemeCode: number; schemeName: string };
+
 const USER_ID = 1; // TODO: replace with logged-in user's real ID once auth is built
 
 const INCOME_LABELS = ["Very unstable", "Unstable", "Somewhat stable", "Stable", "Very stable"];
@@ -57,9 +59,13 @@ export default function InvestmentsPage() {
     age: 21, incomeStability: 3, horizonMonths: 12, lossReaction: 3, savingsMonths: 3,
   });
   const [riskProfile, setRiskProfile] = useState<string | null>(null);
-  const [symbol, setSymbol] = useState("");
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Search state — moved INSIDE the component, where all hooks must live
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FundSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
   async function loadOpportunities() {
     const res = await fetch(`http://localhost:8000/investments/opportunities/${USER_ID}`);
@@ -70,6 +76,24 @@ export default function InvestmentsPage() {
   useEffect(() => {
     loadOpportunities();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`http://localhost:8000/investments/search?q=${encodeURIComponent(searchQuery)}`);
+        setSearchResults(await res.json());
+      } catch {
+        setSearchResults([]);
+      }
+      setSearching(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   async function checkRiskProfile() {
     setLoading(true);
@@ -90,14 +114,14 @@ export default function InvestmentsPage() {
     setLoading(false);
   }
 
-  async function addFund() {
-    if (!symbol.trim()) return;
+  async function addFund(schemeCode: number) {
     await fetch("http://localhost:8000/investments/watchlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: USER_ID, symbol }),
+      body: JSON.stringify({ user_id: USER_ID, symbol: String(schemeCode) }),
     });
-    setSymbol("");
+    setSearchQuery("");
+    setSearchResults([]);
     await loadOpportunities();
   }
 
@@ -117,7 +141,6 @@ export default function InvestmentsPage() {
         <div className="glass rounded-3xl p-6 sm:p-8 space-y-7">
           <h2 className="font-display text-2xl text-forest">Risk profile quiz</h2>
 
-          {/* Age */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm text-ink-soft">How old are you?</label>
@@ -130,7 +153,6 @@ export default function InvestmentsPage() {
             />
           </div>
 
-          {/* Income stability */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm text-ink-soft">How stable is your income right now?</label>
@@ -143,7 +165,6 @@ export default function InvestmentsPage() {
             />
           </div>
 
-          {/* Investment horizon */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm text-ink-soft">How long before you'd need this money back?</label>
@@ -158,7 +179,6 @@ export default function InvestmentsPage() {
             />
           </div>
 
-          {/* Loss reaction */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm text-ink-soft">
@@ -177,7 +197,6 @@ export default function InvestmentsPage() {
             </div>
           </div>
 
-          {/* Savings cushion */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm text-ink-soft">How many months of expenses do you have saved?</label>
@@ -209,32 +228,43 @@ export default function InvestmentsPage() {
         {/* Watchlist */}
         <div className="space-y-4">
           <h2 className="font-display text-2xl text-forest">Fund watchlist</h2>
-          <div className="flex gap-3">
+
+          <div className="relative">
             <input
-              className="flex-1 bg-elevated border border-hairline rounded-2xl px-4 py-3.5 text-sm
+              className="w-full bg-elevated border border-hairline rounded-2xl px-4 py-3.5 text-sm
                          placeholder:text-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-gold/50
                          transition-all duration-200 ease-out"
-              placeholder="mfapi.in scheme code — e.g. 119551"
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
+              placeholder="Search a fund — e.g. Axis Bluechip, HDFC Flexi Cap…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <button
-              onClick={addFund}
-              className="px-6 py-3.5 bg-forest text-base rounded-2xl font-medium
-                         hover:bg-ink transition-colors duration-200 ease-out"
-            >
-              Add
-            </button>
+            {searching && (
+              <p className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-ink-soft">searching…</p>
+            )}
+            {searchResults.length > 0 && (
+              <div className="absolute z-10 w-full mt-2 glass rounded-2xl overflow-hidden shadow-lg max-h-72 overflow-y-auto">
+                {searchResults.map((r) => (
+                  <button
+                    key={r.schemeCode}
+                    onClick={() => addFund(r.schemeCode)}
+                    className="w-full text-left px-4 py-3 text-sm hover:bg-forest/5
+                               transition-colors duration-150 ease-out border-b border-hairline last:border-0"
+                  >
+                    {r.schemeName}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {opportunities.length === 0 && (
             <div className="glass rounded-2xl p-8 text-center text-ink-soft text-sm">
-              No funds tracked yet — add a scheme code above.
+              No funds tracked yet — search and add one above.
             </div>
           )}
 
-          {opportunities.map((o) => (
-            <div key={o.symbol} className="glass rounded-2xl p-5">
+          {opportunities.map((o, i) => (
+            <div key={`${o.symbol}-${i}`} className="glass rounded-2xl p-5">
               {o.error ? (
                 <p className="text-sm text-rust">{o.symbol} — {o.error}</p>
               ) : (

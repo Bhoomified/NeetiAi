@@ -61,3 +61,10 @@ def detect_opportunity(nav_history: list, window: int = 20, z_threshold: float =
         "is_opportunity": bool(z_score <= z_threshold),   # explicit bool() cast — the actual fix
         "note": "Statistical signal only — not investment advice. Consult a registered advisor before investing.",
     }
+
+async def search_funds(query: str):
+    url = f"https://api.mfapi.in/mf/search?q={query}"
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(url)
+        resp.raise_for_status()
+    return resp.json()

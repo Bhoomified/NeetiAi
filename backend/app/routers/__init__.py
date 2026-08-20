@@ -11,7 +11,7 @@ from app.ml_optimizer import optimize_budget
 from app.schemas import ForecastRead, BudgetOptimizeRequest, BudgetOptimizeResponse
 from app.ml_chatbot import chat as chatbot_chat
 from app.models import ChatLog
-from app.ml_investments import classify_risk_profile, fetch_fund_nav_history, detect_opportunity
+from app.ml_investments import classify_risk_profile, fetch_fund_nav_history, detect_opportunity,search_funds
 from app.models import InvestmentWatchlist
 from app.schemas import RiskQuizRequest, WatchlistCreate, WatchlistRead
 
@@ -208,3 +208,10 @@ async def check_opportunities(user_id: int, session: Session = Depends(get_sessi
             results.append({"symbol": entry.symbol, "error": f"Could not fetch data: {e}"})
 
     return {"opportunities": results}
+
+@router.get("/investments/search")
+async def search_investments(q: str):
+    if len(q) < 2:
+        return []
+    results = await search_funds(q)
+    return results[:10]  
