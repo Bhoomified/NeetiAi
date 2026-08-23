@@ -2,7 +2,7 @@ import Nav from "@/components/Nav";
 import FinanceLineArt from "@/components/FinanceLineArt";
 import AbstractEdgePatterns from "@/components/AbstractEdgePatterns";
 import StickyTagline from "@/components/StickyTagline";
-import FeatureAccordion from "@/components/FeatureAccordion";
+import FeatureShowcase from "@/components/FeatureShowcase";
 import NavigationBlocks from "@/components/NavigationBlocks";
 import FloatingAssistant from "@/components/FloatingAssistant";
 import MagneticButton from "@/components/MagneticButton";
@@ -28,7 +28,7 @@ export default function Home() {
       </section>
 
       <section id="features" className="relative px-6 sm:px-8 pb-32">
-        <FeatureAccordion />
+        <FeatureShowcase />
       </section>
 
       <section className="relative glass-forest">
