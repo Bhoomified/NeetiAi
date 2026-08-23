@@ -23,7 +23,7 @@ export default function MagneticButton({
       onMouseLeave={() => setPos({ x: 0, y: 0 })}
       onClick={onClick}
       style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
-      className="group relative px-8 py-4 bg-forest text-base rounded-full font-medium
+      className="group relative px-8 py-4 bg-forest text-paper rounded-full font-medium
                  transition-transform duration-200 ease-out hover:shadow-lg hover:shadow-forest/20"
     >
       <span className="relative z-10">{children}</span>
