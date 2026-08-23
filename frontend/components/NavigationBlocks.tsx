@@ -1,9 +1,16 @@
 const BLOCKS = [
-  { title: "Dashboard", href: "/dashboard", hover: "See where your money actually went →" },
-  { title: "Budget", href: "/budget", hover: "Build a savings plan that fits you →" },
-  { title: "Chat", href: "/chat", hover: "Ask Kuber anything, money or otherwise →" },
-  { title: "Investments", href: "/investments", hover: "Know your risk, track your funds →" },
+  { title: "Dashboard", href: "/dashboard", hover: "See where your money went", tone: "navy" },
+  { title: "Budget", href: "/budget", hover: "Build a plan that fits you", tone: "olive" },
+  { title: "Chat", href: "/chat", hover: "Ask Kuber, anytime", tone: "wine" },
+  { title: "Investments", href: "/investments", hover: "Know your risk, track your funds", tone: "gold" },
 ];
+
+const TONE: Record<string, string> = {
+  navy: "bg-navy/[0.06] border-navy/50 hover:border-navy/60",
+  olive: "bg-olive/[0.06] border-olive/50 hover:border-olive/60",
+  wine: "bg-wine/[0.06] border-wine/50 hover:border-wine/60",
+  gold: "bg-gold/[0.09] border-gold/50 hover:border-gold/70",
+};
 
 export default function NavigationBlocks() {
   return (
@@ -12,14 +19,11 @@ export default function NavigationBlocks() {
         <a
           key={b.title}
           href={b.href}
-          className="group relative h-40 rounded-3xl glass border border-hairline overflow-hidden
-                     hover:border-gold hover:-translate-y-1 transition-all duration-300 ease-out flex items-end p-5"
+          className={`group h-40 rounded-3xl border flex flex-col items-center justify-center text-center px-5
+                      hover:-translate-y-1 transition-all duration-300 ease-out ${TONE[b.tone]}`}
         >
-          <span className="font-display text-2xl text-forest group-hover:opacity-0 transition-opacity duration-200 ease-out">
-            {b.title}
-          </span>
-          <span className="absolute inset-0 flex items-center justify-center text-center px-6 text-sm font-medium text-ink
-                            opacity-0 group-hover:opacity-100 bg-paper/95 transition-opacity duration-200 ease-out">
+          <span className="font-display text-3xl text-forest mb-2">{b.title}</span>
+          <span className="text-lg text-ink-soft opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-out">
             {b.hover}
           </span>
         </a>
