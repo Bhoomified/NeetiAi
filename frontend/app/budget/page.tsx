@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Nav from "@/components/Nav";
-
+import PageBackground from "@/components/PageBackground";
 type Allocation = {
   category: string;
   predicted_amount: number;
@@ -49,9 +49,10 @@ export default function BudgetPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper pb-24">
-      <Nav />
-
+    <main className="relative min-h-screen bg-paper pb-24 overflow-x-hidden">
+  <PageBackground />
+  <Nav />
+  
       <div className="max-w-4xl mx-auto px-6 sm:px-8 pt-12 space-y-8">
         <div>
           <p className="text-sm tracking-[0.15em] uppercase text-gold font-semibold mb-2">Budget</p>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Nav from "@/components/Nav";
-
+import PageBackground from "@/components/PageBackground";
 type Transaction = {
   id: number;
   merchant_raw: string;
@@ -90,8 +90,9 @@ export default function Dashboard() {
 }
 
   return (
-    <main className="min-h-screen bg-paper pb-24">
-      <Nav />
+   <main className="relative min-h-screen bg-paper pb-24 overflow-x-hidden">
+  <PageBackground />
+  <Nav />
 
       <div className="max-w-5xl mx-auto px-6 sm:px-8 pt-12 space-y-8">
         <div>
