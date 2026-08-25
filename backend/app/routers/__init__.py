@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 from fastapi import APIRouter, Depends, HTTPException # type: ignore
 from sqlmodel import Session, select # type: ignore
 from app.database import get_session
@@ -14,10 +15,25 @@ from app.models import ChatLog
 from app.ml_investments import classify_risk_profile, fetch_fund_nav_history, detect_opportunity,search_funds
 from app.models import InvestmentWatchlist
 from app.schemas import RiskQuizRequest, WatchlistCreate, WatchlistRead
-
+from app.models import IncomeSource
+from app.schemas import IncomeSourceCreate, IncomeSourceRead, TotalIncomeRead
 
 router = APIRouter()
 
+def compute_weekly_income(user_id: int, session: Session) -> float:
+    """Base user.monthly_income PLUS all active income sources, normalized to weekly."""
+    user = session.get(User, user_id)
+    base_weekly = (user.monthly_income if user else 0) / 4.33
+
+    sources = session.exec(select(IncomeSource).where(IncomeSource.user_id == user_id)).all()
+    extra_weekly = 0.0
+    for s in sources:
+        if s.frequency == "weekly":
+            extra_weekly += s.amount
+        else:  # monthly
+            extra_weekly += s.amount / 4.33
+
+    return base_weekly + extra_weekly
 
 @router.post("/users", response_model=UserRead)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
@@ -82,7 +98,7 @@ def budget_optimize(payload: BudgetOptimizeRequest, session: Session = Depends(g
     if not predicted_spend:
         raise HTTPException(status_code=400, detail="Not enough transaction history to build a budget yet.")
 
-    weekly_income = payload.weekly_income or (user.monthly_income / 4.33)
+    weekly_income = payload.weekly_income or compute_weekly_income(payload.user_id, session)
 
     result, error = optimize_budget(
         predicted_category_spend=predicted_spend,
@@ -133,7 +149,7 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
         forecast = forecast_user(user_transactions)
         predicted_spend = {c["category"]: c["predicted_amount"] for c in forecast["categories"]}
         if predicted_spend:
-            weekly_income = user.monthly_income / 4.33
+            weekly_income = compute_weekly_income(payload.user_id, session)
             opt_result, _ = optimize_budget(predicted_spend, weekly_income, savings_target_pct=0.15)
             if opt_result:
                 backend_data = {"amount": opt_result["projected_savings"]}
@@ -159,16 +175,6 @@ def risk_profile(payload: RiskQuizRequest):
         payload.loss_reaction, payload.existing_savings_months,
     )
     return {"risk_profile": profile}
-
-
-@router.post("/investments/watchlist", response_model=WatchlistRead)
-def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_session)):
-    entry = InvestmentWatchlist(user_id=payload.user_id, symbol=payload.symbol, note=payload.note)
-    session.add(entry)
-    session.commit()
-    session.refresh(entry)
-    return entry
-
 
 @router.post("/investments/watchlist", response_model=WatchlistRead)
 def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_session)):
@@ -215,3 +221,36 @@ async def search_investments(q: str):
         return []
     results = await search_funds(q)
     return results[:10]  
+
+@router.post("/income-sources", response_model=IncomeSourceRead)
+def add_income_source(payload: IncomeSourceCreate, session: Session = Depends(get_session)):
+    if payload.frequency not in ("monthly", "weekly"):
+        raise HTTPException(400, "frequency must be 'monthly' or 'weekly'")
+    source = IncomeSource(**payload.model_dump())
+    session.add(source)
+    session.commit()
+    session.refresh(source)
+    return source
+
+
+@router.get("/income-sources/{user_id}", response_model=TotalIncomeRead)
+def get_income_sources(user_id: int, session: Session = Depends(get_session)):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(404, "User not found")
+    sources = session.exec(select(IncomeSource).where(IncomeSource.user_id == user_id)).all()
+    return {
+        "weekly_income": round(compute_weekly_income(user_id, session), 2),
+        "monthly_income": user.monthly_income,
+        "sources": sources,
+    }
+
+
+@router.delete("/income-sources/{source_id}")
+def delete_income_source(source_id: int, session: Session = Depends(get_session)):
+    source = session.get(IncomeSource, source_id)
+    if not source:
+        raise HTTPException(404, "Income source not found")
+    session.delete(source)
+    session.commit()
+    return {"deleted": True}

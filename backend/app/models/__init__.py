@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field  # pyright: ignore[reportMissingImports]
 from typing import Optional
 from datetime import datetime
 import uuid
@@ -54,3 +54,11 @@ class ModelMetadata(SQLModel, table=True):
     version: str
     trained_at: datetime = Field(default_factory=datetime.utcnow)
     accuracy: Optional[float] = None
+
+class IncomeSource(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    label: str                    # e.g. "Part-time tutoring", "Family allowance"
+    amount: float
+    frequency: str                # "monthly" or "weekly"
+    created_at: datetime = Field(default_factory=datetime.utcnow)

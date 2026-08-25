@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 type Allocation = {
@@ -18,6 +17,8 @@ type BudgetResult = {
   allocations: Allocation[];
 };
 
+type IncomeSource = { id: number; label: string; amount: number; frequency: string };
+
 const USER_ID = 1;
 
 export default function BudgetPage() {
@@ -25,7 +26,11 @@ export default function BudgetPage() {
   const [result, setResult] = useState<BudgetResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
+  const [totalWeeklyIncome, setTotalWeeklyIncome] = useState<number | null>(null);
+  const [newLabel, setNewLabel] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [newFrequency, setNewFrequency] = useState<"weekly" | "monthly">("weekly");
   async function runOptimizer() {
     setLoading(true);
     setError(null);
@@ -48,6 +53,32 @@ export default function BudgetPage() {
     setLoading(false);
   }
 
+  async function loadIncome() {
+  const res = await fetch(`http://localhost:8000/income-sources/${USER_ID}`);
+  const data = await res.json();
+  setIncomeSources(data.sources);
+  setTotalWeeklyIncome(data.weekly_income);
+}
+
+async function addIncomeSource() {
+  if (!newLabel || !newAmount) return;
+  await fetch("http://localhost:8000/income-sources", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: USER_ID, label: newLabel, amount: parseFloat(newAmount), frequency: newFrequency }),
+  });
+  setNewLabel("");
+  setNewAmount("");
+  await loadIncome();
+}
+
+async function removeIncomeSource(id: number) {
+  await fetch(`http://localhost:8000/income-sources/${id}`, { method: "DELETE" });
+  await loadIncome();
+}
+useEffect(() => {
+  loadIncome();
+}, []);
   return (
     <main className="relative min-h-screen bg-paper pb-24 overflow-x-hidden">
   <PageBackground />
@@ -61,6 +92,64 @@ export default function BudgetPage() {
           </h1>
         </div>
 
+                {/* Income sources */}
+        <div className="glass rounded-3xl p-6 sm:p-8 space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-2xl text-forest">Your income</h2>
+            {totalWeeklyIncome !== null && (
+              <span className="font-mono text-sm ink-strong">₹{totalWeeklyIncome.toLocaleString()}/wk total</span>
+            )}
+          </div>
+
+          {incomeSources.length > 0 && (
+            <div className="space-y-2">
+              {incomeSources.map((s) => (
+                <div key={s.id} className="flex items-center justify-between text-sm p-3 rounded-xl bg-elevated/50">
+                  <span>{s.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-ink-soft">₹{s.amount} / {s.frequency}</span>
+                    <button onClick={() => removeIncomeSource(s.id)} className="text-rust text-xs hover:underline">
+                      remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              className="flex-1 bg-elevated border border-hairline rounded-xl px-3 py-2.5 text-sm
+                         placeholder:text-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-gold/50"
+              placeholder="e.g. Weekend tutoring"
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+            />
+            <input
+              className="sm:w-28 bg-elevated border border-hairline rounded-xl px-3 py-2.5 text-sm font-mono
+                         placeholder:text-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-gold/50"
+              placeholder="Amount"
+              value={newAmount}
+              onChange={(e) => setNewAmount(e.target.value)}
+            />
+            <select
+              value={newFrequency}
+              onChange={(e) => setNewFrequency(e.target.value as "weekly" | "monthly")}
+              className="bg-elevated border border-hairline rounded-xl px-3 py-2.5 text-sm"
+            >
+              <option value="weekly">per week</option>
+              <option value="monthly">per month</option>
+            </select>
+            <button
+              onClick={addIncomeSource}
+              className="px-5 py-2.5 bg-forest text-white rounded-xl text-sm font-medium
+                         hover:bg-ink transition-colors duration-200 ease-out"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+        
         {/* Savings target slider */}
         <div className="glass rounded-3xl p-8">
           <div className="flex items-center justify-between mb-4">

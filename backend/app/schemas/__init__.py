@@ -91,3 +91,23 @@ class WatchlistRead(BaseModel):
     user_id: int
     symbol: str
     note: Optional[str]
+
+class IncomeSourceCreate(BaseModel):
+    user_id: int
+    label: str
+    amount: float
+    frequency: str  # "monthly" | "weekly"
+
+
+class IncomeSourceRead(BaseModel):
+    id: int
+    user_id: int
+    label: str
+    amount: float
+    frequency: str
+
+
+class TotalIncomeRead(BaseModel):
+    weekly_income: float
+    monthly_income: float
+    sources: list[IncomeSourceRead]
