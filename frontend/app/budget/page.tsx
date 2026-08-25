@@ -79,7 +79,7 @@ export default function BudgetPage() {
           <button
             onClick={runOptimizer}
             disabled={loading}
-            className="mt-6 w-full py-3.5 bg-forest text-base rounded-2xl font-medium
+            className="mt-6 w-full py-3.5 bg-forest text-gold rounded-2xl font-medium
                        hover:bg-ink transition-colors duration-200 ease-out disabled:opacity-50"
           >
             {loading ? "Calculating…" : "Build my budget"}
