@@ -111,3 +111,9 @@ class TotalIncomeRead(BaseModel):
     weekly_income: float
     monthly_income: float
     sources: list[IncomeSourceRead]
+
+class UserSync(BaseModel):
+    supabase_uid: str
+    email: str
+    first_name: str
+    last_name: str

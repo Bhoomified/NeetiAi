@@ -17,6 +17,7 @@ from app.models import InvestmentWatchlist
 from app.schemas import RiskQuizRequest, WatchlistCreate, WatchlistRead
 from app.models import IncomeSource
 from app.schemas import IncomeSourceCreate, IncomeSourceRead, TotalIncomeRead
+from app.schemas import UserSync
 
 router = APIRouter()
 
@@ -254,3 +255,22 @@ def delete_income_source(source_id: int, session: Session = Depends(get_session)
     session.delete(source)
     session.commit()
     return {"deleted": True}
+
+@router.post("/users/sync", response_model=UserRead)
+def sync_user(payload: UserSync, session: Session = Depends(get_session)):
+    """Called right after login/signup — finds or creates the matching backend user."""
+    existing = session.exec(select(User).where(User.supabase_uid == payload.supabase_uid)).first()
+    if existing:
+        return existing
+
+    full_name = f"{payload.first_name} {payload.last_name}".strip()
+    new_user = User(
+        supabase_uid=payload.supabase_uid,
+        name=full_name,
+        email=payload.email,
+        monthly_income=0.0,
+    )
+    session.add(new_user)
+    session.commit()
+    session.refresh(new_user)
+    return new_user

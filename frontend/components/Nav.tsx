@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const { session, backendUser, signOut } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 120);
@@ -23,12 +25,26 @@ export default function Nav() {
           <a href="/investments" className="hover:text-forest transition-colors duration-200 ease-out whitespace-nowrap">Investments</a>
         </div>
 
-        <a
-          href="/dashboard"
-          className="text-sm font-semibold px-5 py-2 rounded-full bg-forest text-white hover:bg-ink transition-colors duration-200 ease-out whitespace-nowrap"
-        >
-          Get started
-        </a>
+        {session ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-ink-soft hidden sm:inline">
+              Hey, {backendUser?.name?.split(" ")[0] || "there"}
+            </span>
+            <button
+              onClick={signOut}
+              className="text-sm font-semibold px-5 py-2 rounded-full bg-forest text-white hover:bg-ink transition-colors duration-200 ease-out"
+            >
+              Log out
+            </button>
+          </div>
+        ) : (
+          <a
+            href="/login"
+            className="text-sm font-semibold px-5 py-2 rounded-full bg-forest text-white hover:bg-ink transition-colors duration-200 ease-out whitespace-nowrap"
+          >
+            Log in
+          </a>
+        )}
       </div>
 
       <div
