@@ -13,7 +13,7 @@ class UserRead(BaseModel):
     uuid: str
     name: str
     email: str
-    monthly_income: float
+   
 
 
 class TransactionCreate(BaseModel):
@@ -34,7 +34,7 @@ class TransactionRead(BaseModel):
 class UserCreate(BaseModel):
     name: str
     email: str
-    monthly_income: float = 0.0     # NEW
+    
 
 
 class ForecastCategoryPrediction(BaseModel):
@@ -109,7 +109,6 @@ class IncomeSourceRead(BaseModel):
 
 class TotalIncomeRead(BaseModel):
     weekly_income: float
-    monthly_income: float
     sources: list[IncomeSourceRead]
 
 class UserSync(BaseModel):

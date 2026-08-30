@@ -1,8 +1,7 @@
 from pydantic import BaseModel
 
-
-from fastapi import APIRouter, Depends, HTTPException # type: ignore
-from sqlmodel import Session, select # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User, Transaction
 from app.schemas import UserCreate, UserRead, TransactionCreate, TransactionRead
@@ -12,7 +11,7 @@ from app.ml_optimizer import optimize_budget
 from app.schemas import ForecastRead, BudgetOptimizeRequest, BudgetOptimizeResponse
 from app.ml_chatbot import chat as chatbot_chat
 from app.models import ChatLog
-from app.ml_investments import classify_risk_profile, fetch_fund_nav_history, detect_opportunity,search_funds
+from app.ml_investments import classify_risk_profile, fetch_fund_nav_history, detect_opportunity, search_funds
 from app.models import InvestmentWatchlist
 from app.schemas import RiskQuizRequest, WatchlistCreate, WatchlistRead
 from app.models import IncomeSource
@@ -21,24 +20,22 @@ from app.schemas import UserSync
 
 router = APIRouter()
 
-def compute_weekly_income(user_id: int, session: Session) -> float:
-    """Base user.monthly_income PLUS all active income sources, normalized to weekly."""
-    user = session.get(User, user_id)
-    base_weekly = (user.monthly_income if user else 0) / 4.33
 
+def compute_weekly_income(user_id: int, session: Session) -> float:
+    """Sum of all active income sources, normalized to weekly. Income lives entirely in IncomeSource now."""
     sources = session.exec(select(IncomeSource).where(IncomeSource.user_id == user_id)).all()
-    extra_weekly = 0.0
+    weekly = 0.0
     for s in sources:
         if s.frequency == "weekly":
-            extra_weekly += s.amount
+            weekly += s.amount
         else:  # monthly
-            extra_weekly += s.amount / 4.33
+            weekly += s.amount / 4.33
+    return weekly
 
-    return base_weekly + extra_weekly
 
 @router.post("/users", response_model=UserRead)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
-    db_user = User(name=user.name, email=user.email, monthly_income=user.monthly_income)
+    db_user = User(name=user.name, email=user.email)
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
@@ -61,7 +58,7 @@ def create_transaction(tx: TransactionCreate, session: Session = Depends(get_ses
         merchant_raw=tx.merchant_raw,
         amount=tx.amount,
         category=category,
-        confidence_score=confidence,   # NEW
+        confidence_score=confidence,
     )
     session.add(db_tx)
     session.commit()
@@ -74,6 +71,7 @@ def get_transactions(user_id: int, session: Session = Depends(get_session)):
     statement = select(Transaction).where(Transaction.user_id == user_id)
     results = session.exec(statement).all()
     return results
+
 
 @router.get("/forecast/{user_id}", response_model=ForecastRead)
 def get_forecast(user_id: int, session: Session = Depends(get_session)):
@@ -104,16 +102,18 @@ def budget_optimize(payload: BudgetOptimizeRequest, session: Session = Depends(g
     result, error = optimize_budget(
         predicted_category_spend=predicted_spend,
         weekly_income=weekly_income,
-        savings_target_pct=payload.savings_target_pct,   # <-- from the request, exactly as you wanted
+        savings_target_pct=payload.savings_target_pct,
         category_weights=payload.category_weights,
     )
     if error:
         raise HTTPException(status_code=400, detail=error)
     return result
 
+
 class ChatRequest(BaseModel):
     user_id: int
     message: str
+
 
 @router.post("/chat")
 def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session)):
@@ -123,8 +123,6 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
 
     user_transactions = session.exec(select(Transaction).where(Transaction.user_id == payload.user_id)).all()
 
-    # First pass: classify + extract entities WITHOUT backend data, so we know
-    # which intent fired before deciding what real data to fetch
     from app.ml_chatbot import predict_intent, extract_amount, extract_category, extract_timeframe
 
     intent, confidence = predict_intent(payload.message)
@@ -137,7 +135,6 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
     backend_data = None
 
     if intent == "category_query" and entities["category"]:
-        # Real category-specific total, not a generic blob
         cat_total = sum(t.amount for t in user_transactions if t.category == entities["category"])
         backend_data = {"amount": cat_total, "category": entities["category"]}
 
@@ -146,7 +143,6 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
         backend_data = {"amount": cat_total, "category": entities["category"]}
 
     elif intent == "savings_flex":
-        # Pull the REAL projected savings from your optimizer, not last-5-transactions
         forecast = forecast_user(user_transactions)
         predicted_spend = {c["category"]: c["predicted_amount"] for c in forecast["categories"]}
         if predicted_spend:
@@ -169,6 +165,7 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
 
     return result
 
+
 @router.post("/investments/risk-profile")
 def risk_profile(payload: RiskQuizRequest):
     profile = classify_risk_profile(
@@ -176,6 +173,7 @@ def risk_profile(payload: RiskQuizRequest):
         payload.loss_reaction, payload.existing_savings_months,
     )
     return {"risk_profile": profile}
+
 
 @router.post("/investments/watchlist", response_model=WatchlistRead)
 def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_session)):
@@ -216,12 +214,14 @@ async def check_opportunities(user_id: int, session: Session = Depends(get_sessi
 
     return {"opportunities": results}
 
+
 @router.get("/investments/search")
 async def search_investments(q: str):
     if len(q) < 2:
         return []
     results = await search_funds(q)
-    return results[:10]  
+    return results[:10]
+
 
 @router.post("/income-sources", response_model=IncomeSourceRead)
 def add_income_source(payload: IncomeSourceCreate, session: Session = Depends(get_session)):
@@ -242,7 +242,6 @@ def get_income_sources(user_id: int, session: Session = Depends(get_session)):
     sources = session.exec(select(IncomeSource).where(IncomeSource.user_id == user_id)).all()
     return {
         "weekly_income": round(compute_weekly_income(user_id, session), 2),
-        "monthly_income": user.monthly_income,
         "sources": sources,
     }
 
@@ -256,6 +255,7 @@ def delete_income_source(source_id: int, session: Session = Depends(get_session)
     session.commit()
     return {"deleted": True}
 
+
 @router.post("/users/sync", response_model=UserRead)
 def sync_user(payload: UserSync, session: Session = Depends(get_session)):
     """Called right after login/signup — finds or creates the matching backend user."""
@@ -268,7 +268,6 @@ def sync_user(payload: UserSync, session: Session = Depends(get_session)):
         supabase_uid=payload.supabase_uid,
         name=full_name,
         email=payload.email,
-        monthly_income=0.0,
     )
     session.add(new_user)
     session.commit()

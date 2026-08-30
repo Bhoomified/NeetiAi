@@ -10,7 +10,6 @@ class User(SQLModel, table=True):
     supabase_uid: Optional[str] = Field(default=None, unique=True, index=True)  # NEW — links to Supabase Auth
     name: str
     email: str = Field(unique=True)
-    monthly_income: float = 0.0
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Transaction(SQLModel, table=True):
