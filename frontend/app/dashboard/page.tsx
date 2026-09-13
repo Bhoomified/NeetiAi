@@ -224,7 +224,7 @@ export default function Dashboard() {
               <button
                 onClick={addTransaction}
                 disabled={loading}
-                className="px-6 py-3.5 bg-forest text-base rounded-2xl font-medium
+                className="px-6 py-3.5 bg-forest text-white rounded-2xl font-medium
                            hover:bg-ink transition-colors duration-200 ease-out disabled:opacity-50"
               >
                 {loading ? "Adding…" : "Add"}

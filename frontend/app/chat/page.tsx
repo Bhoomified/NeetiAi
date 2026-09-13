@@ -71,7 +71,7 @@ export default function ChatPage() {
                 <div
                   className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                     m.role === "user"
-                      ? "bg-forest text-base rounded-br-sm"
+                      ? "bg-forest text-white rounded-br-sm"
                       : "bg-elevated border border-hairline rounded-bl-sm"
                   }`}
                 >
@@ -102,7 +102,7 @@ export default function ChatPage() {
             <button
               onClick={sendMessage}
               disabled={loading}
-              className="px-6 py-3.5 bg-forest text-base rounded-2xl font-medium
+              className="px-6 py-3.5 bg-forest text-white rounded-2xl font-medium
                          hover:bg-ink transition-colors duration-200 ease-out disabled:opacity-50"
             >
               Send
