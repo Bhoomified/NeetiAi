@@ -96,7 +96,7 @@ class IncomeSourceCreate(BaseModel):
     user_id: int
     label: str
     amount: float
-    frequency: str  # "monthly" | "weekly"
+    frequency: str  # "monthly" | "weekly" | "one_time"
 
 
 class IncomeSourceRead(BaseModel):
@@ -108,9 +108,10 @@ class IncomeSourceRead(BaseModel):
 
 
 class TotalIncomeRead(BaseModel):
-    weekly_income: float
+    recurring_weekly_income: float
+    one_time_total: float
+    weekly_income: float  # recurring + one_time, for backward compatibility with optimizer calls
     sources: list[IncomeSourceRead]
-
 class UserSync(BaseModel):
     supabase_uid: str
     email: str

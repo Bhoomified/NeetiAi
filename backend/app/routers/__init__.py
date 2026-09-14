@@ -21,17 +21,28 @@ from app.schemas import UserSync
 router = APIRouter()
 
 
-def compute_weekly_income(user_id: int, session: Session) -> float:
-    """Sum of all active income sources, normalized to weekly. Income lives entirely in IncomeSource now."""
+def compute_income_breakdown(user_id: int, session: Session) -> dict:
+    """Returns recurring weekly income and one-time income separately."""
     sources = session.exec(select(IncomeSource).where(IncomeSource.user_id == user_id)).all()
-    weekly = 0.0
+    recurring_weekly = 0.0
+    one_time_total = 0.0
     for s in sources:
         if s.frequency == "weekly":
-            weekly += s.amount
-        else:  # monthly
-            weekly += s.amount / 4.33
-    return weekly
+            recurring_weekly += s.amount
+        elif s.frequency == "monthly":
+            recurring_weekly += s.amount / 4.33
+        elif s.frequency == "one_time":
+            one_time_total += s.amount
+    return {
+        "recurring_weekly_income": recurring_weekly,
+        "one_time_total": one_time_total,
+        "weekly_income": recurring_weekly + one_time_total,
+    }
 
+
+def compute_weekly_income(user_id: int, session: Session) -> float:
+    """Kept for backward compatibility — used by /budget/optimize and /chat."""
+    return compute_income_breakdown(user_id, session)["weekly_income"]
 
 @router.post("/users", response_model=UserRead)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
@@ -225,8 +236,8 @@ async def search_investments(q: str):
 
 @router.post("/income-sources", response_model=IncomeSourceRead)
 def add_income_source(payload: IncomeSourceCreate, session: Session = Depends(get_session)):
-    if payload.frequency not in ("monthly", "weekly"):
-        raise HTTPException(400, "frequency must be 'monthly' or 'weekly'")
+    if payload.frequency not in ("monthly", "weekly", "one_time"):
+        raise HTTPException(400, "frequency must be 'monthly', 'weekly', or 'one_time'")
     source = IncomeSource(**payload.model_dump())
     session.add(source)
     session.commit()
@@ -240,8 +251,11 @@ def get_income_sources(user_id: int, session: Session = Depends(get_session)):
     if not user:
         raise HTTPException(404, "User not found")
     sources = session.exec(select(IncomeSource).where(IncomeSource.user_id == user_id)).all()
+    breakdown = compute_income_breakdown(user_id, session)
     return {
-        "weekly_income": round(compute_weekly_income(user_id, session), 2),
+        "recurring_weekly_income": round(breakdown["recurring_weekly_income"], 2),
+        "one_time_total": round(breakdown["one_time_total"], 2),
+        "weekly_income": round(breakdown["weekly_income"], 2),
         "sources": sources,
     }
 

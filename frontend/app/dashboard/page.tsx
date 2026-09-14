@@ -55,7 +55,7 @@ export default function Dashboard() {
   const [totalWeeklyIncome, setTotalWeeklyIncome] = useState<number | null>(null);
   const [newLabel, setNewLabel] = useState("");
   const [newAmount, setNewAmount] = useState("");
-  const [newFrequency, setNewFrequency] = useState<"weekly" | "monthly">("weekly");
+  const [newFrequency, setNewFrequency] = useState<"weekly" | "monthly" | "one_time">("weekly");
 
   async function loadAll() {
     try {
@@ -148,9 +148,9 @@ export default function Dashboard() {
           <div className="glass rounded-3xl p-6 sm:p-8 space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl text-forest">Your income</h2>
-              {totalWeeklyIncome !== null && totalWeeklyIncome !== undefined && (
+              {totalWeeklyIncome !== null && (
                 <span className="font-mono text-sm ink-strong">₹{totalWeeklyIncome.toLocaleString()}/wk total</span>
-              )}
+                )}
             </div>
 
             {incomeSources.length > 0 && (
@@ -159,10 +159,12 @@ export default function Dashboard() {
                   <div key={s.id} className="flex items-center justify-between text-sm p-3 rounded-xl bg-elevated/50">
                     <span>{s.label}</span>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-ink-soft">₹{s.amount} / {s.frequency}</span>
-                      <button onClick={() => removeIncomeSource(s.id)} className="text-rust text-xs hover:underline">
+                        <span className="font-mono text-ink-soft">
+                          ₹{s.amount} {s.frequency === "one_time" ? "· one-time" : `/ ${s.frequency}`}
+                        </span>
+                        <button onClick={() => removeIncomeSource(s.id)} className="text-rust text-xs hover:underline">
                         remove
-                      </button>
+                        </button>
                     </div>
                   </div>
                 ))}
@@ -186,11 +188,12 @@ export default function Dashboard() {
               />
               <select
                 value={newFrequency}
-                onChange={(e) => setNewFrequency(e.target.value as "weekly" | "monthly")}
+                onChange={(e) => setNewFrequency(e.target.value as "weekly" | "monthly" | "one_time")}
                 className="bg-elevated border border-hairline rounded-xl px-3 py-2.5 text-sm"
               >
                 <option value="weekly">per week</option>
                 <option value="monthly">per month</option>
+                <option value="one_time">one-time</option>
               </select>
               <button
                 onClick={addIncomeSource}
