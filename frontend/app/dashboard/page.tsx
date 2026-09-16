@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import StackedHeading from "@/components/StackedHeading";
 
 type Transaction = {
   id: number;
@@ -137,11 +138,13 @@ export default function Dashboard() {
 
         <div className="max-w-5xl mx-auto px-6 sm:px-8 pt-12 space-y-8">
           <div>
-            <p className="text-sm tracking-[0.15em] uppercase text-gold font-semibold mb-2">Dashboard</p>
-            <h1 className="font-display text-4xl sm:text-5xl">
-              Hey {backendUser?.name?.split(" ")[0] || "there"}, here's where your{" "}
-              <span className="italic text-forest">money</span> went.
-            </h1>
+            <div className="text-center sm:text-left">
+      <StackedHeading
+          serif={`Hey ${backendUser?.name?.split(" ")[0] || "there"}`}
+          mono="Here's where your money went"
+          align="left"
+              />
+          </div>
           </div>
 
           {/* Income sources (moved from budget page) */}
@@ -149,7 +152,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl text-forest">Your income</h2>
               {totalWeeklyIncome !== null && (
-                <span className="font-mono text-sm ink-strong">₹{totalWeeklyIncome.toLocaleString()}/wk total</span>
+                <span className="tabular text-sm ink-strong">₹{totalWeeklyIncome.toLocaleString()}/wk total</span>
                 )}
             </div>
 
@@ -159,7 +162,7 @@ export default function Dashboard() {
                   <div key={s.id} className="flex items-center justify-between text-sm p-3 rounded-xl bg-elevated/50">
                     <span>{s.label}</span>
                     <div className="flex items-center gap-3">
-                        <span className="font-mono text-ink-soft">
+                        <span className="tabular text-ink-soft">
                           ₹{s.amount} {s.frequency === "one_time" ? "· one-time" : `/ ${s.frequency}`}
                         </span>
                         <button onClick={() => removeIncomeSource(s.id)} className="text-rust text-xs hover:underline">
@@ -180,7 +183,7 @@ export default function Dashboard() {
                 onChange={(e) => setNewLabel(e.target.value)}
               />
               <input
-                className="sm:w-28 bg-elevated border border-hairline rounded-xl px-3 py-2.5 text-sm font-mono
+                className="sm:w-28 bg-elevated border border-hairline rounded-xl px-3 py-2.5 text-sm tabular
                            placeholder:text-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-gold/50"
                 placeholder="Amount"
                 value={newAmount}
@@ -217,7 +220,7 @@ export default function Dashboard() {
                 onChange={(e) => setMerchant(e.target.value)}
               />
               <input
-                className="sm:w-32 bg-elevated/80 border border-hairline rounded-2xl px-4 py-3.5 text-sm font-mono
+                className="sm:w-32 bg-elevated/80 border border-hairline rounded-2xl px-4 py-3.5 text-sm tabular
                            placeholder:text-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-gold/50
                            transition-all duration-200 ease-out"
                 placeholder="Amount"
@@ -256,7 +259,7 @@ export default function Dashboard() {
                     <p className="text-xs text-ink-soft capitalize mt-0.5">{tx.category ?? "uncategorized"}</p>
                   </div>
                   <ConfidenceBadge score={tx.confidence_score} />
-                  <span className="font-mono text-sm ink-strong whitespace-nowrap">₹{tx.amount}</span>
+                  <span className="tabular text-sm ink-strong whitespace-nowrap">₹{tx.amount}</span>
                 </div>
               ))}
             </div>
@@ -281,7 +284,7 @@ export default function Dashboard() {
                     .map((c) => (
                       <div key={c.category} className="flex items-center justify-between text-sm">
                         <span className="capitalize text-ink-soft">{c.category}</span>
-                        <span className="font-mono ink-strong">₹{c.predicted_amount.toLocaleString()}</span>
+                        <span className="tabular ink-strong">₹{c.predicted_amount.toLocaleString()}</span>
                       </div>
                     ))}
                 </div>

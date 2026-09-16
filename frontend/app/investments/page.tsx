@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import StackedHeading from "@/components/StackedHeading";
 
 type Opportunity = {
   symbol: string;
@@ -137,10 +138,9 @@ export default function InvestmentsPage() {
 
         <div className="max-w-4xl mx-auto px-6 sm:px-8 pt-12 space-y-10">
           <div>
-            <p className="text-sm tracking-[0.15em] uppercase text-gold font-semibold mb-2">Investments</p>
-            <h1 className="font-display text-4xl sm:text-5xl">
-              Know your <span className="italic text-forest">risk</span>, track your funds.
-            </h1>
+            <div className="text-center sm:text-left">
+            <StackedHeading serif="Investments" mono="Know your risk, track your funds" align="left" />
+          </div>
           </div>
 
           <div className="glass rounded-3xl p-6 sm:p-8 space-y-7">
@@ -149,7 +149,7 @@ export default function InvestmentsPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm text-ink-soft">How old are you?</label>
-                <span className="font-mono text-sm ink-strong">{quiz.age} yrs</span>
+                <span className="tabular text-sm ink-strong">{quiz.age} yrs</span>
               </div>
               <input
                 type="range" min={18} max={80} value={quiz.age}
@@ -161,7 +161,7 @@ export default function InvestmentsPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm text-ink-soft">How stable is your income right now?</label>
-                <span className="font-mono text-sm ink-strong">{INCOME_LABELS[quiz.incomeStability - 1]}</span>
+                <span className="tabular text-sm ink-strong">{INCOME_LABELS[quiz.incomeStability - 1]}</span>
               </div>
               <input
                 type="range" min={1} max={5} value={quiz.incomeStability}
@@ -173,7 +173,7 @@ export default function InvestmentsPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm text-ink-soft">How long before you'd need this money back?</label>
-                <span className="font-mono text-sm ink-strong">
+                <span className="tabular text-sm ink-strong">
                   {quiz.horizonMonths < 12 ? `${quiz.horizonMonths} mo` : `${(quiz.horizonMonths / 12).toFixed(1)} yr`}
                 </span>
               </div>
@@ -189,7 +189,7 @@ export default function InvestmentsPage() {
                 <label className="text-sm text-ink-soft">
                   If your investment dropped 10%, how calm would you stay?
                 </label>
-                <span className="font-mono text-sm ink-strong">{quiz.lossReaction} / 5</span>
+                <span className="tabular text-sm ink-strong">{quiz.lossReaction} / 5</span>
               </div>
               <input
                 type="range" min={1} max={5} value={quiz.lossReaction}
@@ -205,7 +205,7 @@ export default function InvestmentsPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm text-ink-soft">How many months of expenses do you have saved?</label>
-                <span className="font-mono text-sm ink-strong">{quiz.savingsMonths} mo</span>
+                <span className="tabular text-sm ink-strong">{quiz.savingsMonths} mo</span>
               </div>
               <input
                 type="range" min={1} max={30} value={quiz.savingsMonths}
@@ -282,7 +282,7 @@ export default function InvestmentsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-ink-soft">
-                      <span className="font-mono ink-strong">NAV: ₹{o.signal?.latest_nav}</span>
+                      <span className="tabular ink-strong">NAV: ₹{o.signal?.latest_nav}</span>
                       <span>Avg: ₹{o.signal?.recent_mean}</span>
                       <span>z: {o.signal?.z_score}</span>
                     </div>

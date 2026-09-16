@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
-import "./globals.css";
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
+import "./globals.css";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
 });
 
@@ -16,14 +16,20 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--tabular",
+  weight: ["400", "500"],
+});
+
 export const metadata: Metadata = {
-  title: "NeetiAi — Money, understood.",
+  title: "NeetiAi — The intelligence behind your finances.",
   description: "AI-powered financial clarity for students, built from the ground up.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body suppressHydrationWarning className="bg-paper text-ink font-sans antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>

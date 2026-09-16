@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import StackedHeading from "@/components/StackedHeading";
 
 type Message = {
   role: "user" | "assistant";
@@ -59,10 +60,9 @@ export default function ChatPage() {
 
         <div className="max-w-2xl w-full mx-auto px-6 sm:px-8 pt-8 pb-4 flex-1 flex flex-col">
           <div>
-            <p className="text-sm tracking-[0.15em] uppercase text-gold font-semibold mb-2">Chat</p>
-            <h1 className="font-display text-3xl sm:text-4xl mb-6">
-              Talk to <span className="italic text-forest">NeetiAi</span>.
-            </h1>
+            <div className="text-center sm:text-left">
+            <StackedHeading serif="Kuber" mono="Your money bestie, on call" align="left" />
+            </div>
           </div>
 
           <div className="flex-1 glass rounded-3xl p-5 sm:p-6 overflow-y-auto space-y-4 mb-4 min-h-[400px] max-h-[55vh]">

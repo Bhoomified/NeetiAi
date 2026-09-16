@@ -1,10 +1,9 @@
+import StackedHeading from "./StackedHeading";
+
 export default function StickyTagline() {
   return (
-    <div className="pt-10 pb-6 text-center">
-      <h1 className="font-display text-6xl sm:text-8xl italic text-forest leading-none">NeetiAi</h1>
-      <p className="text-sm sm:text-base tracking-[0.15em] uppercase text-ink-soft mt-3 font-medium">
-        The intelligence behind your finances.
-      </p>
+    <div className="pt-14 pb-8">
+      <StackedHeading serif="NeetiAi" mono="The intelligence behind your finances" size="hero" />
     </div>
   );
 }

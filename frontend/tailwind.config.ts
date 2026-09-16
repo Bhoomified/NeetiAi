@@ -17,9 +17,10 @@ const config: Config = {
         olive: "#4A5320",
         hairline: "#D4CBB8",
       },
-      fontFamily: {
+       fontFamily: {
         display: ["var(--font-fraunces)", "serif"],
         sans: ["var(--font-inter)", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
       },
     },
   },

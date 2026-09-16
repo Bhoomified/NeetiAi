@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import StackedHeading from "@/components/StackedHeading";
 
 type Allocation = {
   category: string;
@@ -63,10 +64,9 @@ export default function BudgetPage() {
 
         <div className="max-w-4xl mx-auto px-6 sm:px-8 pt-12 space-y-8">
           <div>
-            <p className="text-sm tracking-[0.15em] uppercase text-gold font-semibold mb-2">Budget</p>
-            <h1 className="font-display text-4xl sm:text-5xl">
-              How much do you want to <span className="italic text-forest">save</span>?
-            </h1>
+           <div className="text-center sm:text-left">
+              <StackedHeading serif="Budget" mono="How much do you want to save" align="left" />
+            </div>
           </div>
 
           <div className="glass rounded-3xl p-8">
@@ -138,7 +138,7 @@ export default function BudgetPage() {
                           ₹{a.predicted_amount.toLocaleString()}
                         </span>
                         <span className="text-sm">→</span>
-                        <span className="font-mono ink-strong">₹{a.budget_cap.toLocaleString()}</span>
+                        <span className="tabular ink-strong">₹{a.budget_cap.toLocaleString()}</span>
                       </div>
                       <div className="mt-3 h-1.5 bg-hairline rounded-full overflow-hidden">
                         <div
