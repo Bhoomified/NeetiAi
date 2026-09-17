@@ -117,3 +117,16 @@ class UserSync(BaseModel):
     email: str
     first_name: str
     last_name: str
+
+class ExplainContributor(BaseModel):
+    feature: str
+    contribution: float
+    is_amount: bool
+
+
+class ExplainResponse(BaseModel):
+    category: Optional[str]
+    confidence: Optional[float]
+    method: str
+    contributors: list[ExplainContributor]
+    note: Optional[str] = None

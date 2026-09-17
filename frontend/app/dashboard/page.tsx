@@ -16,6 +16,14 @@ type Transaction = {
   date: string;
 };
 
+type Explanation = {
+  category: string | null;
+  confidence: number | null;
+  method: string;
+  contributors: { feature: string; contribution: number; is_amount: boolean }[];
+  note?: string;
+};
+
 type ForecastCategory = { category: string; predicted_amount: number; method: string };
 type Forecast = {
   predicted_total: number;
@@ -57,7 +65,8 @@ export default function Dashboard() {
   const [newLabel, setNewLabel] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newFrequency, setNewFrequency] = useState<"weekly" | "monthly" | "one_time">("weekly");
-
+  const [explainingId, setExplainingId] = useState<number | null>(null);
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
   async function loadAll() {
     try {
       const [txRes, fcRes] = await Promise.all([
@@ -130,6 +139,22 @@ export default function Dashboard() {
     setLoading(false);
   }
 
+    async function explainTransaction(txId: number) {
+    if (explainingId === txId) {
+      setExplainingId(null);
+      setExplanation(null);
+      return;
+    }
+    setExplainingId(txId);
+    setExplanation(null);
+    try {
+      const res = await fetch(`http://localhost:8000/transactions/${txId}/explain`);
+      if (res.ok) setExplanation(await res.json());
+    } catch {
+      setExplanation(null);
+    }
+  }
+  
   return (
     <ProtectedRoute>
       <main className="relative min-h-screen bg-paper pb-24 overflow-x-hidden">
@@ -248,20 +273,73 @@ export default function Dashboard() {
                 </div>
               )}
               {transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="group flex items-center justify-between gap-4 p-4 rounded-2xl border border-hairline
-                             bg-elevated/50 hover:border-gold hover:-translate-y-0.5
-                             transition-all duration-200 ease-out"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{tx.merchant_raw}</p>
-                    <p className="text-xs text-ink-soft capitalize mt-0.5">{tx.category ?? "uncategorized"}</p>
-                  </div>
-                  <ConfidenceBadge score={tx.confidence_score} />
-                  <span className="tabular text-sm ink-strong whitespace-nowrap">₹{tx.amount}</span>
-                </div>
-              ))}
+          <div key={tx.id} className="space-y-2">
+            <button
+              onClick={() => explainTransaction(tx.id)}
+              className="w-full group flex items-center justify-between gap-4 p-4 rounded-2xl border border-hairline
+                        bg-elevated/50 hover:border-gold hover:-translate-y-0.5
+                        transition-all duration-200 ease-out text-left"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{tx.merchant_raw}</p>
+                <p className="text-xs text-ink-soft capitalize mt-0.5">
+                  {tx.category ?? "uncategorized"}
+                  <span className="text-gold ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    why?
+                  </span>
+                </p>
+              </div>
+              <ConfidenceBadge score={tx.confidence_score} />
+              <span className="tabular text-sm ink-strong whitespace-nowrap">₹{tx.amount}</span>
+            </button>
+
+            {explainingId === tx.id && (
+              <div className="glass-solid rounded-2xl p-4 text-sm space-y-3">
+                {!explanation ? (
+                  <p className="text-ink-soft text-xs">Working out why…</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-ink-soft">
+                      Sorted as <span className="ink-strong capitalize">{explanation.category}</span> because of:
+                    </p>
+                    <div className="space-y-2">
+                      {explanation.contributors.map((c, i) => {
+                        const maxAbs = Math.max(...explanation.contributors.map((x) => Math.abs(x.contribution)), 0.0001);
+                        const width = (Math.abs(c.contribution) / maxAbs) * 100;
+                        const positive = c.contribution >= 0;
+                        return (
+                          <div key={i}>
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="tabular">
+                                {c.is_amount ? `the amount (₹${tx.amount})` : `"${c.feature.trim()}"`}
+                              </span>
+                              <span className={positive ? "text-forest" : "text-rust"}>
+                                {positive ? "supports" : "argues against"}
+                              </span>
+                            </div>
+                            <div className="h-1.5 bg-hairline/50 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ease-out ${
+                                  positive ? "bg-forest" : "bg-rust"
+                                }`}
+                                style={{ width: `${width}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {explanation.method !== "shap" && (
+                      <p className="text-[10px] text-ink-soft/70 italic">
+                        Approximate explanation — exact attribution unavailable for this one.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            </div>
+          ))}
             </div>
 
             {/* Forecast panel */}

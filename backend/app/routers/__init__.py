@@ -17,6 +17,8 @@ from app.schemas import RiskQuizRequest, WatchlistCreate, WatchlistRead
 from app.models import IncomeSource
 from app.schemas import IncomeSourceCreate, IncomeSourceRead, TotalIncomeRead
 from app.schemas import UserSync
+from app.ml_explain import explain_categorization
+from app.schemas import ExplainResponse
 
 router = APIRouter()
 
@@ -83,6 +85,12 @@ def get_transactions(user_id: int, session: Session = Depends(get_session)):
     results = session.exec(statement).all()
     return results
 
+@router.get("/transactions/{transaction_id}/explain", response_model=ExplainResponse)
+def explain_transaction(transaction_id: int, session: Session = Depends(get_session)):
+    tx = session.get(Transaction, transaction_id)
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return explain_categorization(tx.merchant_raw, tx.amount)
 
 @router.get("/forecast/{user_id}", response_model=ForecastRead)
 def get_forecast(user_id: int, session: Session = Depends(get_session)):
