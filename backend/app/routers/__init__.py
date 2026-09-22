@@ -19,6 +19,8 @@ from app.schemas import IncomeSourceCreate, IncomeSourceRead, TotalIncomeRead
 from app.schemas import UserSync
 from app.ml_explain import explain_categorization
 from app.schemas import ExplainResponse
+from app.ml_recommend import get_peer_recommendation
+from app.schemas import PeerRecommendation
 
 router = APIRouter()
 
@@ -295,3 +297,17 @@ def sync_user(payload: UserSync, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(new_user)
     return new_user
+
+@router.get("/recommendations/{user_id}", response_model=PeerRecommendation)
+def get_recommendation(user_id: int, session: Session = Depends(get_session)):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    transactions = session.exec(select(Transaction).where(Transaction.user_id == user_id)).all()
+    category_spend = {}
+    for t in transactions:
+        if t.category:
+            category_spend[t.category] = category_spend.get(t.category, 0.0) + t.amount
+
+    return get_peer_recommendation(category_spend)

@@ -35,6 +35,17 @@ type IncomeSource = { id: number; label: string; amount: number; frequency: stri
 
 const LOW_CONFIDENCE = 0.6;
 
+type PeerRec = {
+  available: boolean;
+  category?: string;
+  avg_cut_pct?: number;
+  peer_count?: number;
+  similarity_confidence?: number;
+  note?: string;
+};
+
+
+
 function ConfidenceBadge({ score }: { score: number | null }) {
   if (score === null) return null;
   const low = score < LOW_CONFIDENCE;
@@ -67,6 +78,7 @@ export default function Dashboard() {
   const [newFrequency, setNewFrequency] = useState<"weekly" | "monthly" | "one_time">("weekly");
   const [explainingId, setExplainingId] = useState<number | null>(null);
   const [explanation, setExplanation] = useState<Explanation | null>(null);
+  const [peerRec, setPeerRec] = useState<PeerRec | null>(null);
   async function loadAll() {
     try {
       const [txRes, fcRes] = await Promise.all([
@@ -94,6 +106,14 @@ export default function Dashboard() {
       setForecast(null);
     }
   }
+  async function loadRecommendation() {
+  try {
+    const res = await fetch(`http://localhost:8000/recommendations/${USER_ID}`);
+    if (res.ok) setPeerRec(await res.json());
+  } catch {
+    setPeerRec(null);
+  }
+}
 
   async function loadIncome() {
     const res = await fetch(`http://localhost:8000/income-sources/${USER_ID}`);
@@ -123,6 +143,7 @@ export default function Dashboard() {
     if (!USER_ID) return; // wait until the real backend user ID exists
     loadAll();
     loadIncome();
+    loadRecommendation();
   }, [USER_ID]);
 
   async function addTransaction() {
@@ -354,6 +375,18 @@ export default function Dashboard() {
                   {forecast?.total_method === "random_forest" ? "Model-based prediction" : "Based on recent average"}
                 </p>
               </div>
+              {peerRec?.available && (
+                  <div className="glass rounded-3xl p-6 border border-gold/30">
+                    <p className="text-xs uppercase tracking-wide text-gold mb-2">Students like you</p>
+                    <p className="text-sm leading-relaxed">
+                      Peers with similar spending saved an average of{" "}
+                      <span className="ink-strong">{peerRec.avg_cut_pct}%</span> by cutting{" "}
+                      <span className="capitalize ink-strong">{peerRec.category}</span>
+                      {peerRec.peer_count && <> (based on {peerRec.peer_count} similar profiles)</>}.
+                    </p>
+                    <p className="text-[10px] text-ink-soft/60 italic mt-2">{peerRec.note}</p>
+                  </div>
+                )}
 
               {forecast && forecast.categories.length > 0 && (
                 <div className="glass rounded-3xl p-5 space-y-3">
@@ -368,6 +401,7 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+            
           </div>
         </div>
       </main>

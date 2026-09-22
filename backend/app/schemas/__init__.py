@@ -130,3 +130,12 @@ class ExplainResponse(BaseModel):
     method: str
     contributors: list[ExplainContributor]
     note: Optional[str] = None
+
+class PeerRecommendation(BaseModel):
+    available: bool
+    category: Optional[str] = None
+    avg_cut_pct: Optional[float] = None
+    peer_count: Optional[int] = None
+    similarity_confidence: Optional[float] = None
+    note: Optional[str] = None
+
