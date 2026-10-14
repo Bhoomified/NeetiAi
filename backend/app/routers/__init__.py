@@ -2,6 +2,8 @@ from pydantic import BaseModel
 
 from fastapi import APIRouter, Depends, HTTPException # type: ignore
 from sqlmodel import Session, select # type: ignore
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from app.database import get_session
 from app.models import User, Transaction
 from app.schemas import UserCreate, UserRead, TransactionCreate, TransactionRead
@@ -260,21 +262,38 @@ def delete_income_source(source_id: int, session: Session = Depends(get_session)
 
 @router.post("/users/sync", response_model=UserRead)
 def sync_user(payload: UserSync, session: Session = Depends(get_session)):
-    """Called right after login/signup — finds or creates the matching backend user."""
-    existing = session.exec(select(User).where(User.supabase_uid == payload.supabase_uid)).first()
-    if existing:
-        return existing
+    """Called right after login/signup — finds, links or creates the matching backend user.
 
-    full_name = f"{payload.first_name} {payload.last_name}".strip()
-    new_user = User(
-        supabase_uid=payload.supabase_uid,
-        name=full_name,
-        email=payload.email,
-    )
-    session.add(new_user)
-    session.commit()
-    session.refresh(new_user)
-    return new_user
+    Idempotent and race-safe: the browser fires this from both getSession and
+    onAuthStateChange, so two requests can arrive together. The loser of the
+    insert race hits the unique constraint, rolls back and re-reads the winner's row.
+    """
+    for _ in range(2):
+        existing = session.exec(select(User).where(User.supabase_uid == payload.supabase_uid)).first()
+        if existing:
+            return existing
+
+        # Same email under another Supabase uid (e.g. signed up by email, later via Google):
+        # link the existing row instead of violating the unique email constraint.
+        user = session.exec(select(User).where(func.lower(User.email) == payload.email.lower())).first()
+        if user:
+            user.supabase_uid = payload.supabase_uid
+        else:
+            user = User(
+                supabase_uid=payload.supabase_uid,
+                name=f"{payload.first_name} {payload.last_name}".strip(),
+                email=payload.email,
+            )
+        session.add(user)
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            continue
+        session.refresh(user)
+        return user
+
+    raise HTTPException(status_code=409, detail="Could not sync your account, please retry.")
 
 @router.get("/recommendations/{user_id}", response_model=PeerRecommendation)
 def get_recommendation(user_id: int, session: Session = Depends(get_session)):
