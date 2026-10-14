@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import { api, ApiError } from "@/lib/api";
 import StackedHeading from "@/components/StackedHeading";
 import Marquee from "@/components/Marquee";
 
@@ -52,15 +53,14 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/chat", {
+      const data = await api<{ response: string; intent?: string }>("/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: USER_ID, message: userMessage }),
+        json: { user_id: USER_ID, message: userMessage },
       });
-      const data = await res.json();
       setMessages((prev) => [...prev, { role: "assistant", text: data.response, intent: data.intent }]);
     } catch (err) {
-      setMessages((prev) => [...prev, { role: "assistant", text: "couldn't reach the backend — try again?" }]);
+      const text = err instanceof ApiError && err.status !== 0 ? err.message : "couldn't reach the backend — try again?";
+      setMessages((prev) => [...prev, { role: "assistant", text }]);
     }
     setLoading(false);
   }

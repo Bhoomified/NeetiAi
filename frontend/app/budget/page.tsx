@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import { api, ApiError } from "@/lib/api";
 import StackedHeading from "@/components/StackedHeading";
 import CountUp from "@/components/CountUp";
 
@@ -39,20 +40,13 @@ export default function BudgetPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:8000/budget/optimize", {
+      setResult(await api<BudgetResult>("/budget/optimize", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: USER_ID, savings_target_pct: savingsPct / 100 }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        setError(err.detail || "Could not build a budget.");
-        setResult(null);
-      } else {
-        setResult(await res.json());
-      }
+        json: { user_id: USER_ID, savings_target_pct: savingsPct / 100 },
+      }));
     } catch (err) {
-      setError("Could not reach backend — is uvicorn running?");
+      setResult(null);
+      setError(err instanceof ApiError && err.status !== 0 ? err.message || "Could not build a budget." : "Could not reach the server — try again in a moment.");
     }
     setLoading(false);
   }

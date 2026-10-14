@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 import StackedHeading from "@/components/StackedHeading";
 
 type Opportunity = {
@@ -71,9 +72,12 @@ export default function InvestmentsPage() {
   const USER_ID = backendUser?.id;
 
   async function loadOpportunities() {
-    const res = await fetch(`http://localhost:8000/investments/opportunities/${USER_ID}`);
-    const data = await res.json();
-    setOpportunities(data.opportunities || []);
+    try {
+      const data = await api<{ opportunities?: Opportunity[] }>(`/investments/opportunities/${USER_ID}`);
+      setOpportunities(data.opportunities || []);
+    } catch (err) {
+      console.error("Opportunities fetch failed:", err);
+    }
   }
 
   useEffect(() => {
@@ -89,8 +93,7 @@ export default function InvestmentsPage() {
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`http://localhost:8000/investments/search?q=${encodeURIComponent(searchQuery)}`);
-        setSearchResults(await res.json());
+        setSearchResults(await api<FundSearchResult[]>(`/investments/search?q=${encodeURIComponent(searchQuery)}`));
       } catch {
         setSearchResults([]);
       }
@@ -108,23 +111,22 @@ export default function InvestmentsPage() {
       loss_reaction: quiz.lossReaction,
       existing_savings_months: mapSavingsToScore(quiz.savingsMonths),
     };
-    const res = await fetch("http://localhost:8000/investments/risk-profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    setRiskProfile(data.risk_profile);
+    try {
+      const data = await api<{ risk_profile: string }>("/investments/risk-profile", { method: "POST", json: payload });
+      setRiskProfile(data.risk_profile);
+    } catch (err) {
+      console.error("Risk profile failed:", err);
+    }
     setLoading(false);
   }
 
   async function addFund(schemeCode: number) {
     if (!USER_ID) return;
-    await fetch("http://localhost:8000/investments/watchlist", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: USER_ID, symbol: String(schemeCode) }),
-    });
+    try {
+      await api("/investments/watchlist", { method: "POST", json: { user_id: USER_ID, symbol: String(schemeCode) } });
+    } catch (err) {
+      console.error("Could not add fund:", err);
+    }
     setSearchQuery("");
     setSearchResults([]);
     await loadOpportunities();

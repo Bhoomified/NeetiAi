@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 import StackedHeading from "@/components/StackedHeading";
 import CountUp from "@/components/CountUp";
 
@@ -82,61 +83,69 @@ export default function Dashboard() {
   const [peerRec, setPeerRec] = useState<PeerRec | null>(null);
   async function loadAll() {
     try {
-      const [txRes, fcRes] = await Promise.all([
-        fetch(`http://localhost:8000/transactions/${USER_ID}`),
-        fetch(`http://localhost:8000/forecast/${USER_ID}`),
+      const [txRes, fcRes] = await Promise.allSettled([
+        api<Transaction[]>(`/transactions/${USER_ID}`),
+        api<Forecast>(`/forecast/${USER_ID}`),
       ]);
 
-      if (!txRes.ok) {
-        console.error("Transactions fetch failed:", txRes.status, await txRes.text());
+      if (txRes.status === "rejected") {
+        console.error("Transactions fetch failed:", txRes.reason);
         setTransactions([]);
       } else {
-        const txData = await txRes.json();
-        setTransactions(Array.isArray(txData) ? txData : []);
+        setTransactions(Array.isArray(txRes.value) ? txRes.value : []);
       }
 
-      if (!fcRes.ok) {
-        console.error("Forecast fetch failed:", fcRes.status, await fcRes.text());
+      if (fcRes.status === "rejected") {
+        console.error("Forecast fetch failed:", fcRes.reason);
         setForecast(null);
       } else {
-        setForecast(await fcRes.json());
+        setForecast(fcRes.value);
       }
     } catch (err) {
-      console.error("Could not reach backend — is uvicorn running on :8000?", err);
+      console.error("Could not load dashboard data", err);
       setTransactions([]);
       setForecast(null);
     }
   }
   async function loadRecommendation() {
   try {
-    const res = await fetch(`http://localhost:8000/recommendations/${USER_ID}`);
-    if (res.ok) setPeerRec(await res.json());
+    setPeerRec(await api<PeerRec>(`/recommendations/${USER_ID}`));
   } catch {
     setPeerRec(null);
   }
 }
 
   async function loadIncome() {
-    const res = await fetch(`http://localhost:8000/income-sources/${USER_ID}`);
-    const data = await res.json();
-    setIncomeSources(data.sources);
-    setTotalWeeklyIncome(data.weekly_income);
+    try {
+      const data = await api<{ sources: IncomeSource[]; weekly_income: number }>(`/income-sources/${USER_ID}`);
+      setIncomeSources(data.sources);
+      setTotalWeeklyIncome(data.weekly_income);
+    } catch (err) {
+      console.error("Income fetch failed:", err);
+    }
   }
 
   async function addIncomeSource() {
     if (!newLabel || !newAmount) return;
-    await fetch("http://localhost:8000/income-sources", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: USER_ID, label: newLabel, amount: parseFloat(newAmount), frequency: newFrequency }),
-    });
-    setNewLabel("");
-    setNewAmount("");
+    try {
+      await api("/income-sources", {
+        method: "POST",
+        json: { user_id: USER_ID, label: newLabel, amount: parseFloat(newAmount), frequency: newFrequency },
+      });
+      setNewLabel("");
+      setNewAmount("");
+    } catch (err) {
+      console.error("Could not add income source:", err);
+    }
     await loadIncome();
   }
 
   async function removeIncomeSource(id: number) {
-    await fetch(`http://localhost:8000/income-sources/${id}`, { method: "DELETE" });
+    try {
+      await api(`/income-sources/${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.error("Could not remove income source:", err);
+    }
     await loadIncome();
   }
 
@@ -150,13 +159,16 @@ export default function Dashboard() {
   async function addTransaction() {
     if (!merchant || !amount) return;
     setLoading(true);
-    await fetch("http://localhost:8000/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: USER_ID, merchant_raw: merchant, amount: parseFloat(amount) }),
-    });
-    setMerchant("");
-    setAmount("");
+    try {
+      await api("/transactions", {
+        method: "POST",
+        json: { user_id: USER_ID, merchant_raw: merchant, amount: parseFloat(amount) },
+      });
+      setMerchant("");
+      setAmount("");
+    } catch (err) {
+      console.error("Could not add transaction:", err);
+    }
     await loadAll();
     setLoading(false);
   }
@@ -170,8 +182,7 @@ export default function Dashboard() {
     setExplainingId(txId);
     setExplanation(null);
     try {
-      const res = await fetch(`http://localhost:8000/transactions/${txId}/explain`);
-      if (res.ok) setExplanation(await res.json());
+      setExplanation(await api<Explanation>(`/transactions/${txId}/explain`));
     } catch {
       setExplanation(null);
     }
