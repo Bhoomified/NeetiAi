@@ -21,7 +21,7 @@ def two_users(client):
 
 def test_owner_can_read_own_data(client, two_users):
     u = two_users
-    assert client.get(f"/transactions/{u['a_id']}", headers=u["a"]).json()[0]["id"] == u["tx_id"]
+    assert client.get(f"/transactions/{u['a_id']}", headers=u["a"]).json()["items"][0]["id"] == u["tx_id"]
     assert client.get(f"/transactions/{u['tx_id']}/explain", headers=u["a"]).status_code == 200
     assert client.get(f"/income-sources/{u['a_id']}", headers=u["a"]).status_code == 200
     assert client.get(f"/users/{u['a_id']}", headers=u["a"]).status_code == 200

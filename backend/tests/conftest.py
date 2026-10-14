@@ -8,7 +8,9 @@ import tempfile
 import time
 
 _tmpdir = tempfile.mkdtemp(prefix="neetiai-tests-")
-os.environ["DATABASE_URL"] = f"sqlite:///{_tmpdir}/test.db"
+# TEST_DATABASE_URL lets the same suite run against a scratch Postgres (never a real project DB:
+# every test drops and recreates all tables)
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or f"sqlite:///{_tmpdir}/test.db"
 os.environ["SUPABASE_URL"] = "https://test-ref.supabase.co"
 os.environ["SUPABASE_JWT_SECRET"] = "test-legacy-hs256-secret"
 os.environ["HF_TOKEN"] = ""            # never call the rephrase API from tests

@@ -18,6 +18,10 @@ type Transaction = {
   date: string;
 };
 
+type TransactionPage = { items: Transaction[]; total: number; limit: number; offset: number };
+
+const PAGE_SIZE = 20;
+
 type Explanation = {
   category: string | null;
   confidence: number | null;
@@ -69,6 +73,8 @@ export default function Dashboard() {
   const [merchant, setMerchant] = useState("");
   const [amount, setAmount] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [txTotal, setTxTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -84,15 +90,17 @@ export default function Dashboard() {
   async function loadAll() {
     try {
       const [txRes, fcRes] = await Promise.allSettled([
-        api<Transaction[]>(`/transactions/${USER_ID}`),
+        api<TransactionPage>(`/transactions/${USER_ID}?limit=${PAGE_SIZE}&offset=0`),
         api<Forecast>(`/forecast/${USER_ID}`),
       ]);
 
       if (txRes.status === "rejected") {
         console.error("Transactions fetch failed:", txRes.reason);
         setTransactions([]);
+        setTxTotal(0);
       } else {
-        setTransactions(Array.isArray(txRes.value) ? txRes.value : []);
+        setTransactions(txRes.value.items);
+        setTxTotal(txRes.value.total);
       }
 
       if (fcRes.status === "rejected") {
@@ -107,6 +115,18 @@ export default function Dashboard() {
       setForecast(null);
     }
   }
+  async function loadMoreTransactions() {
+    setLoadingMore(true);
+    try {
+      const page = await api<TransactionPage>(`/transactions/${USER_ID}?limit=${PAGE_SIZE}&offset=${transactions.length}`);
+      setTransactions((prev) => [...prev, ...page.items.filter((t) => !prev.some((p) => p.id === t.id))]);
+      setTxTotal(page.total);
+    } catch (err) {
+      console.error("Could not load more transactions:", err);
+    }
+    setLoadingMore(false);
+  }
+
   async function loadRecommendation() {
   try {
     setPeerRec(await api<PeerRec>(`/recommendations/${USER_ID}`));
@@ -373,6 +393,16 @@ export default function Dashboard() {
             )}
             </div>
           ))}
+              {transactions.length < txTotal && (
+                <button
+                  onClick={loadMoreTransactions}
+                  disabled={loadingMore}
+                  className="w-full text-sm font-semibold py-3 rounded-2xl border border-hairline text-forest
+                            hover:border-gold transition-colors duration-200 ease-out disabled:opacity-50"
+                >
+                  {loadingMore ? "Loading…" : `Load more (${txTotal - transactions.length} older)`}
+                </button>
+              )}
             </div>
 
             {/* Forecast panel */}

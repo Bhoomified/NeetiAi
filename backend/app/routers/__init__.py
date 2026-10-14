@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -9,8 +10,8 @@ from sqlalchemy.exc import IntegrityError
 from app.database import get_session
 from app.auth import current_user, ensure_owner, token_claims
 from app.rate_limit import limiter, CHAT_LIMIT, SEARCH_LIMIT
-from app.models import User, Transaction
-from app.schemas import UserRead, TransactionCreate, TransactionRead
+from app.models import User, Transaction, utcnow
+from app.schemas import UserRead, TransactionCreate, TransactionRead, TransactionPage
 from app.ml_categorizer import categorize_transaction
 from app.ml_forecast import forecast_user
 from app.ml_optimizer import optimize_budget
@@ -50,6 +51,20 @@ def compute_income_breakdown(user_id: int, session: Session) -> dict:
     }
 
 
+# The forecaster's features are the last 4 weekly totals plus per-category shares;
+# half a year of history covers both without loading a user's whole ledger.
+FORECAST_WINDOW_WEEKS = 26
+
+
+def load_forecast_rows(user_id: int, session: Session) -> list:
+    """Only the three columns forecast_user reads, for the recent window."""
+    since = utcnow() - timedelta(weeks=FORECAST_WINDOW_WEEKS)
+    return session.exec(
+        select(Transaction.date, Transaction.amount, Transaction.category)
+        .where(Transaction.user_id == user_id, Transaction.date >= since)
+    ).all()
+
+
 def compute_weekly_income(user_id: int, session: Session) -> float:
     """Kept for backward compatibility — used by /budget/optimize and /chat."""
     return compute_income_breakdown(user_id, session)["weekly_income"]
@@ -77,12 +92,25 @@ def create_transaction(tx: TransactionCreate, session: Session = Depends(get_ses
     return db_tx
 
 
-@router.get("/transactions/{user_id}", response_model=list[TransactionRead])
-def get_transactions(user_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
+@router.get("/transactions/{user_id}", response_model=TransactionPage)
+def get_transactions(
+    user_id: int,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    session: Session = Depends(get_session),
+    me: User = Depends(current_user),
+):
+    """Newest first, one page at a time (served by the (user_id, date) index)."""
     ensure_owner(user_id, me)
-    statement = select(Transaction).where(Transaction.user_id == user_id)
-    results = session.exec(statement).all()
-    return results
+    total = session.exec(select(func.count()).select_from(Transaction).where(Transaction.user_id == user_id)).one()
+    items = session.exec(
+        select(Transaction)
+        .where(Transaction.user_id == user_id)
+        .order_by(Transaction.date.desc(), Transaction.id.desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 @router.get("/transactions/{transaction_id}/explain", response_model=ExplainResponse)
 def explain_transaction(transaction_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
@@ -95,8 +123,7 @@ def explain_transaction(transaction_id: int, session: Session = Depends(get_sess
 def get_forecast(user_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
     ensure_owner(user_id, me)
 
-    transactions = session.exec(select(Transaction).where(Transaction.user_id == user_id)).all()
-    result = forecast_user(transactions)
+    result = forecast_user(load_forecast_rows(user_id, session))
     return {"user_id": user_id, **result}
 
 
@@ -104,8 +131,7 @@ def get_forecast(user_id: int, session: Session = Depends(get_session), me: User
 def budget_optimize(payload: BudgetOptimizeRequest, session: Session = Depends(get_session), me: User = Depends(current_user)):
     ensure_owner(payload.user_id, me)
 
-    transactions = session.exec(select(Transaction).where(Transaction.user_id == payload.user_id)).all()
-    forecast = forecast_user(transactions)
+    forecast = forecast_user(load_forecast_rows(payload.user_id, session))
 
     predicted_spend = {c["category"]: c["predicted_amount"] for c in forecast["categories"]}
     if not predicted_spend:

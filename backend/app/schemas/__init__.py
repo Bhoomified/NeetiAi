@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Annotated, Literal, Optional
 from datetime import datetime
+
+from app.models import as_utc
 
 
 # Shared input bounds: positive rupee amounts up to ₹1 crore, short labels
@@ -30,6 +32,18 @@ class TransactionRead(BaseModel):
     category: Optional[str]
     confidence_score: Optional[float]   # NEW
     date: datetime
+
+    @field_validator("date")
+    @classmethod
+    def _utc(cls, v: datetime) -> datetime:
+        return as_utc(v)  # always serialize with +00:00 so the browser doesn't read it as local time
+
+
+class TransactionPage(BaseModel):
+    items: list[TransactionRead]
+    total: int
+    limit: int
+    offset: int
 
 class ForecastCategoryPrediction(BaseModel):
     category: str
