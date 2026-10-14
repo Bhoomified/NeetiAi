@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, create_engine, Session
+from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 from fastapi import HTTPException
@@ -11,6 +12,7 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./neetiai.db")
 DB_ECHO = os.getenv("DB_ECHO", "false").lower() in ("1", "true", "yes")
 DB_HOST = make_url(DATABASE_URL).host or "local sqlite"
+ALEMBIC_INI = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "alembic.ini")
 
 if DATABASE_URL.startswith("sqlite"):
     # FastAPI runs sync routes in a threadpool, so SQLite must allow cross-thread use
@@ -58,11 +60,38 @@ def describe_db_error(exc: Exception) -> str:
     return f"{DB_HOST}: {hint}"
 
 
+def migration_status() -> str | None:
+    """None when the database is at the latest Alembic revision, else a one-line reason.
+    Local SQLite is built by create_all and isn't versioned, so it always counts as current."""
+    if engine.dialect.name == "sqlite":
+        return None
+    from alembic.config import Config
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+
+    head = ScriptDirectory.from_config(Config(ALEMBIC_INI)).get_current_head()
+    with engine.connect() as conn:
+        current = MigrationContext.configure(conn).get_current_revision()
+    if current == head:
+        return None
+    if current is None:
+        return f"database has no Alembic revision (expected {head}) — see backend/alembic/README.md"
+    return f"database is at {current}, code expects {head} — run: venv/bin/alembic upgrade head"
+
+
 def init_db() -> bool:
-    """Connects and creates tables. Returns False (degraded mode) instead of raising."""
+    """Checks the connection (and, for local SQLite only, creates tables).
+    Returns False (degraded mode) instead of raising.
+
+    Postgres schema changes go through Alembic only — create_all would silently
+    create tables that don't match the migrations."""
     db_state.last_attempt = time.monotonic()
     try:
-        SQLModel.metadata.create_all(engine)
+        if engine.dialect.name == "sqlite":
+            SQLModel.metadata.create_all(engine)
+        else:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
     except OperationalError as e:
         db_state.ready = False
         db_state.error = describe_db_error(e)

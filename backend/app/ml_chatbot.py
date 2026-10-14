@@ -14,10 +14,11 @@ import os
 import re
 import random
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import joblib
 from app.ml_rephrase import safe_rephrase
+from app.models import as_utc
 
 try:
     import torch # type: ignore
@@ -186,7 +187,7 @@ def _filter(transactions, timeframe, now):
     start, end = _window(timeframe, now)
     return [
         t for t in transactions
-        if (start is None or t.date >= start) and (end is None or t.date < end)
+        if (start is None or as_utc(t.date) >= start) and (end is None or as_utc(t.date) < end)
     ]
 
 
@@ -198,7 +199,7 @@ def _weekly_average(transactions, category=None) -> float | None:
     rows = [t for t in transactions if category is None or t.category == category]
     if not rows:
         return None
-    span_days = (max(t.date for t in rows) - min(t.date for t in rows)).days
+    span_days = (max(as_utc(t.date) for t in rows) - min(as_utc(t.date) for t in rows)).days
     weeks = max(1.0, span_days / 7)
     return sum(t.amount for t in rows) / weeks
 
@@ -434,7 +435,7 @@ def chat(user_message: str, transactions: list, income: dict, forecast_fn, optim
     forecast_fn / optimize_fn: zero-arg callables, evaluated lazily (only the
     intents that need them pay for a forecast run)
     """
-    now = now or datetime.utcnow()
+    now = as_utc(now) if now else datetime.now(timezone.utc)
     entities = {
         "amount": extract_amount(user_message),
         "category": extract_category(user_message),

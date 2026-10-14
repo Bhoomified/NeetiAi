@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
-from app.database import engine, db_state, ensure_db, mark_db_down
+from app.database import engine, db_state, ensure_db, mark_db_down, migration_status
 from app import ml_categorizer, ml_forecast, ml_chatbot, ml_investments, ml_recommend, ml_rephrase
 
 router = APIRouter(tags=["health"])
@@ -46,6 +46,10 @@ def health_ready():
             database_ok = False
     if not database_ok:
         reasons.append(f"database: {db_state.error}")
+    else:
+        pending = migration_status()
+        if pending:
+            reasons.append(f"migrations: {pending}")
 
     models = model_status()
     reasons += [f"model not loaded: {name}" for name, loaded in models.items() if not loaded]

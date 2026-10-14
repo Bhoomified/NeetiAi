@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError
-from app.database import create_db_and_tables, db_state, mark_db_down
+from app.database import create_db_and_tables, db_state, mark_db_down, migration_status
 from app.routers import router
 from app.health import router as health_router
 from app.rate_limit import limiter
@@ -34,6 +34,8 @@ app.include_router(health_router)
 def on_startup():
     if not create_db_and_tables():
         print(f"⚠️  Database unreachable — {db_state.error} | API up in degraded mode, see GET /health/ready")
+    elif pending := migration_status():
+        print(f"⚠️  Schema out of date — {pending}")
 
 
 @app.exception_handler(RateLimitExceeded)
