@@ -1,11 +1,11 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Annotated, Literal, Optional
 from datetime import datetime
 
 
-class UserCreate(BaseModel):
-    name: str
-    email: str
+# Shared input bounds: positive rupee amounts up to ₹1 crore, short labels
+Amount = Annotated[float, Field(gt=0, le=10_000_000)]
+QuizScore = Annotated[int, Field(ge=1, le=5)]
 
 
 class UserRead(BaseModel):
@@ -18,8 +18,8 @@ class UserRead(BaseModel):
 
 class TransactionCreate(BaseModel):
     user_id: int
-    merchant_raw: str
-    amount: float
+    merchant_raw: str = Field(min_length=1, max_length=200)
+    amount: Amount
 
 
 class TransactionRead(BaseModel):
@@ -30,12 +30,6 @@ class TransactionRead(BaseModel):
     category: Optional[str]
     confidence_score: Optional[float]   # NEW
     date: datetime
-
-class UserCreate(BaseModel):
-    name: str
-    email: str
-    
-
 
 class ForecastCategoryPrediction(BaseModel):
     category: str
@@ -53,9 +47,9 @@ class ForecastRead(BaseModel):
 
 class BudgetOptimizeRequest(BaseModel):
     user_id: int
-    savings_target_pct: float          # user-set, e.g. 0.15 for 15% — REQUIRED, no default baked in
-    weekly_income: Optional[float] = None   # if omitted, derived from user.monthly_income / 4.33
-    category_weights: Optional[dict[str, float]] = None   # optional override of default priorities
+    savings_target_pct: float = Field(ge=0, lt=1)   # user-set, e.g. 0.15 for 15% — REQUIRED, no default baked in
+    weekly_income: Optional[Amount] = None   # if omitted, derived from user.monthly_income / 4.33
+    category_weights: Optional[dict[Annotated[str, Field(max_length=50)], Annotated[float, Field(ge=0, le=100)]]] = Field(default=None, max_length=20)   # optional override of default priorities
 
 
 class BudgetAllocation(BaseModel):
@@ -73,17 +67,17 @@ class BudgetOptimizeResponse(BaseModel):
     allocations: list[BudgetAllocation]
 
 class RiskQuizRequest(BaseModel):
-    age_score: int        # 1-5
-    income_stability: int  # 1-5
-    investment_horizon: int  # 1-5
-    loss_reaction: int      # 1-5
-    existing_savings_months: int  # 1-5
+    age_score: QuizScore
+    income_stability: QuizScore
+    investment_horizon: QuizScore
+    loss_reaction: QuizScore
+    existing_savings_months: QuizScore
 
 
 class WatchlistCreate(BaseModel):
     user_id: int
-    symbol: str          # mfapi.in scheme code, e.g. "119551"
-    note: Optional[str] = None
+    symbol: str = Field(pattern=r"^[0-9A-Za-z]{1,20}$")   # mfapi.in scheme code, e.g. "119551"
+    note: Optional[str] = Field(default=None, max_length=200)
 
 
 class WatchlistRead(BaseModel):
@@ -94,9 +88,9 @@ class WatchlistRead(BaseModel):
 
 class IncomeSourceCreate(BaseModel):
     user_id: int
-    label: str
-    amount: float
-    frequency: str  # "monthly" | "weekly" | "one_time"
+    label: str = Field(min_length=1, max_length=100)
+    amount: Amount
+    frequency: Literal["weekly", "monthly", "one_time"]
 
 
 class IncomeSourceRead(BaseModel):
@@ -113,10 +107,10 @@ class TotalIncomeRead(BaseModel):
     weekly_income: float  # recurring + one_time, for backward compatibility with optimizer calls
     sources: list[IncomeSourceRead]
 class UserSync(BaseModel):
-    supabase_uid: str
-    email: str
-    first_name: str
-    last_name: str
+    supabase_uid: str = Field(max_length=64)
+    email: str = Field(max_length=320)   # ignored: the verified token's email is used
+    first_name: str = Field(max_length=100)
+    last_name: str = Field(max_length=100)
 
 class ExplainContributor(BaseModel):
     feature: str

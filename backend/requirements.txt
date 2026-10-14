@@ -36,3 +36,8 @@ huggingface_hub==1.28.0
 httpx @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_cc4egw1482/croot/httpx_1723474826664/work
 psycopg2-binary==2.9.12
 shap==0.52.0
+PyJWT[crypto]==2.15.1
+cryptography==50.0.2
+slowapi==0.1.10
+limits==5.8.0
+pytest==9.1.1

@@ -1,12 +1,16 @@
-from pydantic import BaseModel
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException # type: ignore
+from pydantic import BaseModel, Field
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request # type: ignore
 from sqlmodel import Session, select # type: ignore
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from app.database import get_session
+from app.auth import current_user, ensure_owner, token_claims
+from app.rate_limit import limiter, CHAT_LIMIT, SEARCH_LIMIT
 from app.models import User, Transaction
-from app.schemas import UserCreate, UserRead, TransactionCreate, TransactionRead
+from app.schemas import UserRead, TransactionCreate, TransactionRead
 from app.ml_categorizer import categorize_transaction
 from app.ml_forecast import forecast_user
 from app.ml_optimizer import optimize_budget
@@ -50,25 +54,15 @@ def compute_weekly_income(user_id: int, session: Session) -> float:
     """Kept for backward compatibility — used by /budget/optimize and /chat."""
     return compute_income_breakdown(user_id, session)["weekly_income"]
 
-@router.post("/users", response_model=UserRead)
-def create_user(user: UserCreate, session: Session = Depends(get_session)):
-    db_user = User(name=user.name, email=user.email)
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
-    return db_user
-
-
 @router.get("/users/{user_id}", response_model=UserRead)
-def get_user(user_id: int, session: Session = Depends(get_session)):
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+def get_user(user_id: int, me: User = Depends(current_user)):
+    ensure_owner(user_id, me)
+    return me
 
 
 @router.post("/transactions", response_model=TransactionRead)
-def create_transaction(tx: TransactionCreate, session: Session = Depends(get_session)):
+def create_transaction(tx: TransactionCreate, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(tx.user_id, me)
     category, confidence = categorize_transaction(tx.merchant_raw, tx.amount)
     db_tx = Transaction(
         user_id=tx.user_id,
@@ -84,23 +78,22 @@ def create_transaction(tx: TransactionCreate, session: Session = Depends(get_ses
 
 
 @router.get("/transactions/{user_id}", response_model=list[TransactionRead])
-def get_transactions(user_id: int, session: Session = Depends(get_session)):
+def get_transactions(user_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(user_id, me)
     statement = select(Transaction).where(Transaction.user_id == user_id)
     results = session.exec(statement).all()
     return results
 
 @router.get("/transactions/{transaction_id}/explain", response_model=ExplainResponse)
-def explain_transaction(transaction_id: int, session: Session = Depends(get_session)):
+def explain_transaction(transaction_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
     tx = session.get(Transaction, transaction_id)
-    if not tx:
+    if not tx or tx.user_id != me.id:  # 404, not 403: don't reveal that another user's row exists
         raise HTTPException(status_code=404, detail="Transaction not found")
     return explain_categorization(tx.merchant_raw, tx.amount)
 
 @router.get("/forecast/{user_id}", response_model=ForecastRead)
-def get_forecast(user_id: int, session: Session = Depends(get_session)):
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+def get_forecast(user_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(user_id, me)
 
     transactions = session.exec(select(Transaction).where(Transaction.user_id == user_id)).all()
     result = forecast_user(transactions)
@@ -108,10 +101,8 @@ def get_forecast(user_id: int, session: Session = Depends(get_session)):
 
 
 @router.post("/budget/optimize", response_model=BudgetOptimizeResponse)
-def budget_optimize(payload: BudgetOptimizeRequest, session: Session = Depends(get_session)):
-    user = session.get(User, payload.user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+def budget_optimize(payload: BudgetOptimizeRequest, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(payload.user_id, me)
 
     transactions = session.exec(select(Transaction).where(Transaction.user_id == payload.user_id)).all()
     forecast = forecast_user(transactions)
@@ -135,14 +126,13 @@ def budget_optimize(payload: BudgetOptimizeRequest, session: Session = Depends(g
 
 class ChatRequest(BaseModel):
     user_id: int
-    message: str
+    message: str = Field(min_length=1, max_length=1000)
 
 
 @router.post("/chat")
-def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session)):
-    user = session.get(User, payload.user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+@limiter.limit(CHAT_LIMIT)
+def chat_endpoint(request: Request, payload: ChatRequest, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(payload.user_id, me)
 
     user_transactions = session.exec(select(Transaction).where(Transaction.user_id == payload.user_id)).all()
     income = compute_income_breakdown(payload.user_id, session)
@@ -168,7 +158,7 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
 
 
 @router.post("/investments/risk-profile")
-def risk_profile(payload: RiskQuizRequest):
+def risk_profile(payload: RiskQuizRequest, claims: dict = Depends(token_claims)):
     profile = classify_risk_profile(
         payload.age_score, payload.income_stability, payload.investment_horizon,
         payload.loss_reaction, payload.existing_savings_months,
@@ -177,7 +167,8 @@ def risk_profile(payload: RiskQuizRequest):
 
 
 @router.post("/investments/watchlist", response_model=WatchlistRead)
-def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_session)):
+def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(payload.user_id, me)
     existing = session.exec(
         select(InvestmentWatchlist).where(
             InvestmentWatchlist.user_id == payload.user_id,
@@ -195,7 +186,8 @@ def add_to_watchlist(payload: WatchlistCreate, session: Session = Depends(get_se
 
 
 @router.get("/investments/opportunities/{user_id}")
-async def check_opportunities(user_id: int, session: Session = Depends(get_session)):
+async def check_opportunities(user_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(user_id, me)
     watchlist = session.exec(select(InvestmentWatchlist).where(InvestmentWatchlist.user_id == user_id)).all()
     if not watchlist:
         return {"opportunities": [], "note": "No funds on your watchlist yet."}
@@ -217,7 +209,8 @@ async def check_opportunities(user_id: int, session: Session = Depends(get_sessi
 
 
 @router.get("/investments/search")
-async def search_investments(q: str):
+@limiter.limit(SEARCH_LIMIT)
+async def search_investments(request: Request, q: Annotated[str, Query(max_length=100)], claims: dict = Depends(token_claims)):
     if len(q) < 2:
         return []
     results = await search_funds(q)
@@ -225,9 +218,8 @@ async def search_investments(q: str):
 
 
 @router.post("/income-sources", response_model=IncomeSourceRead)
-def add_income_source(payload: IncomeSourceCreate, session: Session = Depends(get_session)):
-    if payload.frequency not in ("monthly", "weekly", "one_time"):
-        raise HTTPException(400, "frequency must be 'monthly', 'weekly', or 'one_time'")
+def add_income_source(payload: IncomeSourceCreate, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(payload.user_id, me)
     source = IncomeSource(**payload.model_dump())
     session.add(source)
     session.commit()
@@ -236,10 +228,8 @@ def add_income_source(payload: IncomeSourceCreate, session: Session = Depends(ge
 
 
 @router.get("/income-sources/{user_id}", response_model=TotalIncomeRead)
-def get_income_sources(user_id: int, session: Session = Depends(get_session)):
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(404, "User not found")
+def get_income_sources(user_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(user_id, me)
     sources = session.exec(select(IncomeSource).where(IncomeSource.user_id == user_id)).all()
     breakdown = compute_income_breakdown(user_id, session)
     return {
@@ -251,9 +241,9 @@ def get_income_sources(user_id: int, session: Session = Depends(get_session)):
 
 
 @router.delete("/income-sources/{source_id}")
-def delete_income_source(source_id: int, session: Session = Depends(get_session)):
+def delete_income_source(source_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
     source = session.get(IncomeSource, source_id)
-    if not source:
+    if not source or source.user_id != me.id:  # 404, not 403: don't reveal that another user's row exists
         raise HTTPException(404, "Income source not found")
     session.delete(source)
     session.commit()
@@ -261,28 +251,39 @@ def delete_income_source(source_id: int, session: Session = Depends(get_session)
 
 
 @router.post("/users/sync", response_model=UserRead)
-def sync_user(payload: UserSync, session: Session = Depends(get_session)):
+def sync_user(payload: UserSync, session: Session = Depends(get_session), claims: dict = Depends(token_claims)):
     """Called right after login/signup — finds, links or creates the matching backend user.
 
+    Identity (uid, email) comes from the verified token; the body only supplies names.
     Idempotent and race-safe: the browser fires this from both getSession and
     onAuthStateChange, so two requests can arrive together. The loser of the
     insert race hits the unique constraint, rolls back and re-reads the winner's row.
     """
+    uid = claims["sub"]
+    email = claims.get("email") or ""
+    if payload.supabase_uid != uid:
+        raise HTTPException(status_code=403, detail="Token does not match the account being synced.")
+    if not email:
+        raise HTTPException(status_code=400, detail="Your login has no email address.")
+
     for _ in range(2):
-        existing = session.exec(select(User).where(User.supabase_uid == payload.supabase_uid)).first()
+        existing = session.exec(select(User).where(User.supabase_uid == uid)).first()
         if existing:
             return existing
 
         # Same email under another Supabase uid (e.g. signed up by email, later via Google):
-        # link the existing row instead of violating the unique email constraint.
-        user = session.exec(select(User).where(func.lower(User.email) == payload.email.lower())).first()
+        # link the existing row instead of violating the unique email constraint — but only
+        # once the provider has verified the email, or anyone could claim the account.
+        user = session.exec(select(User).where(func.lower(User.email) == email.lower())).first()
         if user:
-            user.supabase_uid = payload.supabase_uid
+            if not (claims.get("user_metadata") or {}).get("email_verified"):
+                raise HTTPException(status_code=409, detail="An account with this email already exists. Verify your email to link it.")
+            user.supabase_uid = uid
         else:
             user = User(
-                supabase_uid=payload.supabase_uid,
+                supabase_uid=uid,
                 name=f"{payload.first_name} {payload.last_name}".strip(),
-                email=payload.email,
+                email=email,
             )
         session.add(user)
         try:
@@ -296,10 +297,8 @@ def sync_user(payload: UserSync, session: Session = Depends(get_session)):
     raise HTTPException(status_code=409, detail="Could not sync your account, please retry.")
 
 @router.get("/recommendations/{user_id}", response_model=PeerRecommendation)
-def get_recommendation(user_id: int, session: Session = Depends(get_session)):
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+def get_recommendation(user_id: int, session: Session = Depends(get_session), me: User = Depends(current_user)):
+    ensure_owner(user_id, me)
 
     transactions = session.exec(select(Transaction).where(Transaction.user_id == user_id)).all()
     category_spend = {}

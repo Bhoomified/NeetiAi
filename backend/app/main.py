@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -5,15 +7,23 @@ from sqlalchemy.exc import OperationalError
 from app.database import create_db_and_tables, db_state, mark_db_down
 from app.routers import router
 from app.health import router as health_router
+from app.rate_limit import limiter
+from slowapi.errors import RateLimitExceeded
+
+# Comma-separated list of exact frontend origins, e.g. "http://localhost:3000,https://neetiai.vercel.app"
+CORS_ORIGINS = [o.strip().rstrip("/") for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+if "*" in CORS_ORIGINS:
+    raise RuntimeError("CORS_ORIGINS must list exact origins; '*' is not allowed together with credentials.")
 
 app = FastAPI(title="NeetiAi API")
+app.state.limiter = limiter
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(router)
@@ -24,6 +34,11 @@ app.include_router(health_router)
 def on_startup():
     if not create_db_and_tables():
         print(f"⚠️  Database unreachable — {db_state.error} | API up in degraded mode, see GET /health/ready")
+
+
+@app.exception_handler(RateLimitExceeded)
+def rate_limited_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse({"detail": f"Too many requests ({exc.detail}) — try again in a minute."}, status_code=429)
 
 
 @app.exception_handler(OperationalError)
