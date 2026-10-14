@@ -9,6 +9,8 @@ node_modules/
 .next/
 
 .env
+.env.*
+!.env.example
 
 # OS
 .DS_Store
