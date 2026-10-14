@@ -44,7 +44,11 @@ export async function api<T = unknown>(path: string, { json, token, headers, ...
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const detail = data?.detail;
-    const message = typeof detail === "string" ? detail : `Request failed (${res.status})`;
+    // FastAPI sends a string for HTTPException and a list of field errors for 422s
+    const message =
+      typeof detail === "string" ? detail
+      : Array.isArray(detail) && detail[0]?.msg ? `${detail[0].loc?.slice(-1)[0] ?? "input"}: ${detail[0].msg}`
+      : `Request failed (${res.status})`;
     throw new ApiError(message, res.status);
   }
   return data as T;
