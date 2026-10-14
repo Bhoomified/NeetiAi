@@ -10,8 +10,8 @@ export default function StackedHeading({ serif, mono, align = "center", size = "
   return (
     <div className={align === "center" ? "text-center" : "text-left"}>
       <h1
-        className={`font-display italic text-forest leading-[0.9] ${
-          isHero ? "text-7xl sm:text-9xl" : "text-4xl sm:text-5xl"
+        className={`font-display italic leading-[0.9] ${
+          isHero ? "text-foil text-7xl sm:text-9xl pb-2" : "text-forest text-4xl sm:text-5xl"
         }`}
       >
         {serif}

@@ -6,6 +6,19 @@ import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import StackedHeading from "@/components/StackedHeading";
+import Marquee from "@/components/Marquee";
+
+const SUGGESTIONS = [
+  "How much did I spend this week?",
+  "Where does most of my money go?",
+  "How much on food this month?",
+  "What will I spend next week?",
+  "How much can I save?",
+  "Help me budget for shopping",
+  "Should I start a SIP?",
+  "What's my income?",
+  "What can you do?",
+];
 
 type Message = {
   role: "user" | "assistant";
@@ -15,7 +28,7 @@ type Message = {
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", text: "heyyy 👋 ask me about your spending, budget, or investments" },
+    { role: "assistant", text: "Hello — I'm Kuber. Ask me about your spending, budget, savings or investments, or tap a suggestion below." },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,13 +40,13 @@ export default function ChatPage() {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function sendMessage() {
-    if (!input.trim()) return;
+  async function sendMessage(text?: string) {
+    const userMessage = (text ?? input).trim();
+    if (!userMessage || loading) return;
     if (!USER_ID) {
       setMessages((prev) => [...prev, { role: "assistant", text: "still loading your account — one sec and try again" }]);
       return;
     }
-    const userMessage = input;
     setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
     setInput("");
     setLoading(true);
@@ -67,7 +80,7 @@ export default function ChatPage() {
 
           <div className="flex-1 glass rounded-3xl p-5 sm:p-6 overflow-y-auto space-y-4 mb-4 min-h-[400px] max-h-[55vh]">
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={i} className={`msg-in flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                     m.role === "user"
@@ -81,13 +94,30 @@ export default function ChatPage() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-elevated border border-hairline px-4 py-3 rounded-2xl rounded-bl-sm text-sm text-ink-soft">
-                  thinking…
+                <div className="msg-in bg-elevated border border-hairline px-4 py-4 rounded-2xl rounded-bl-sm flex gap-1.5" aria-label="Kuber is typing">
+                  <span className="typing-dot" />
+                  <span className="typing-dot" style={{ animationDelay: "0.15s" }} />
+                  <span className="typing-dot" style={{ animationDelay: "0.3s" }} />
                 </div>
               </div>
             )}
             <div ref={scrollRef} />
           </div>
+
+          <Marquee speed={50} className="mb-4 -mx-2">
+            {SUGGESTIONS.map((q) => (
+              <button
+                key={q}
+                onClick={() => sendMessage(q)}
+                disabled={loading}
+                className="mx-1.5 whitespace-nowrap px-4 py-2 rounded-full border border-gold/50 bg-elevated/70
+                           font-display italic text-sm text-forest hover:bg-forest hover:text-paper
+                           transition-colors duration-200 ease-out disabled:opacity-50"
+              >
+                {q}
+              </button>
+            ))}
+          </Marquee>
 
           <div className="flex gap-3 sticky bottom-4">
             <input
@@ -100,7 +130,7 @@ export default function ChatPage() {
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             />
             <button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={loading}
               className="px-6 py-3.5 bg-forest text-white rounded-2xl font-medium
                          hover:bg-ink transition-colors duration-200 ease-out disabled:opacity-50"

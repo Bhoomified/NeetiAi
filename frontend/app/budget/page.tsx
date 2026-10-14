@@ -5,6 +5,7 @@ import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import StackedHeading from "@/components/StackedHeading";
+import CountUp from "@/components/CountUp";
 
 type Allocation = {
   category: string;
@@ -102,16 +103,16 @@ export default function BudgetPage() {
               <div className="grid sm:grid-cols-3 gap-4">
                 <div className="glass-forest rounded-3xl p-6 text-base">
                   <p className="text-xs uppercase tracking-wide text-gold mb-2">Weekly income</p>
-                  <p className="font-display text-3xl">₹{result.weekly_income.toLocaleString()}</p>
+                  <p className="font-display text-3xl"><CountUp value={result.weekly_income} prefix="₹" /></p>
                 </div>
                 <div className="glass rounded-3xl p-6">
                   <p className="text-xs uppercase tracking-wide text-ink-soft mb-2">Savings target</p>
-                  <p className="font-display text-3xl text-forest">₹{result.savings_target.toLocaleString()}</p>
+                  <p className="font-display text-3xl text-forest"><CountUp value={result.savings_target} prefix="₹" /></p>
                 </div>
                 <div className={`rounded-3xl p-6 ${result.target_met ? "glass" : "glass border border-rust/30"}`}>
                   <p className="text-xs uppercase tracking-wide text-ink-soft mb-2">Projected savings</p>
                   <p className={`font-display text-3xl ${result.target_met ? "text-forest" : "text-rust"}`}>
-                    ₹{result.projected_savings.toLocaleString()}
+                    <CountUp value={result.projected_savings} prefix="₹" />
                   </p>
                   {!result.target_met && (
                     <p className="text-xs text-rust mt-1">Target not fully met at current spend</p>

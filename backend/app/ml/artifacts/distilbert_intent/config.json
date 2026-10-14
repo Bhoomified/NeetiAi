@@ -11,21 +11,31 @@
   "eos_token_id": null,
   "hidden_dim": 3072,
   "id2label": {
-    "0": "LABEL_0",
-    "1": "LABEL_1",
-    "2": "LABEL_2",
-    "3": "LABEL_3",
-    "4": "LABEL_4",
-    "5": "LABEL_5"
+    "0": "budget_help",
+    "1": "category_query",
+    "2": "forecast_query",
+    "3": "help",
+    "4": "income_query",
+    "5": "investment_query",
+    "6": "random_chat",
+    "7": "savings_flex",
+    "8": "spending_complaint",
+    "9": "top_category",
+    "10": "total_spend"
   },
   "initializer_range": 0.02,
   "label2id": {
-    "LABEL_0": 0,
-    "LABEL_1": 1,
-    "LABEL_2": 2,
-    "LABEL_3": 3,
-    "LABEL_4": 4,
-    "LABEL_5": 5
+    "budget_help": 0,
+    "category_query": 1,
+    "forecast_query": 2,
+    "help": 3,
+    "income_query": 4,
+    "investment_query": 5,
+    "random_chat": 6,
+    "savings_flex": 7,
+    "spending_complaint": 8,
+    "top_category": 9,
+    "total_spend": 10
   },
   "max_position_embeddings": 512,
   "model_type": "distilbert",
@@ -39,6 +49,5 @@
   "tie_weights_": true,
   "tie_word_embeddings": true,
   "transformers_version": "5.15.0",
-  "use_cache": false,
   "vocab_size": 30522
 }

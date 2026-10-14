@@ -6,6 +6,8 @@ import FeatureShowcase from "@/components/FeatureShowcase";
 import NavigationBlocks from "@/components/NavigationBlocks";
 import FloatingAssistant from "@/components/FloatingAssistant";
 import MagneticButton from "@/components/MagneticButton";
+import LedgerTicker from "@/components/LedgerTicker";
+import Reveal from "@/components/Reveal";
 
 export default function Home() {
   return (
@@ -23,8 +25,14 @@ export default function Home() {
         <MagneticButton>Start tracking →</MagneticButton>
       </section>
 
+      <section className="relative pb-20">
+        <LedgerTicker />
+      </section>
+
       <section className="relative px-6 sm:px-8 pb-24">
-        <NavigationBlocks />
+        <Reveal>
+          <NavigationBlocks />
+        </Reveal>
       </section>
 
       <section id="features" className="relative px-6 sm:px-8 pb-32">
@@ -33,10 +41,12 @@ export default function Home() {
 
       <section className="relative glass-forest">
         <div className="max-w-3xl mx-auto px-6 sm:px-8 py-20 text-center">
-          <h2 className="font-display text-3xl sm:text-4xl text-paper italic mb-6">
-            Money conversations, minus the shame.
-          </h2>
-          <MagneticButton>Try NeetiAi free →</MagneticButton>
+          <Reveal>
+            <h2 className="font-display text-3xl sm:text-4xl text-paper italic mb-6">
+              Money conversations, minus the shame.
+            </h2>
+            <MagneticButton>Try NeetiAi free →</MagneticButton>
+          </Reveal>
         </div>
       </section>
     </main>

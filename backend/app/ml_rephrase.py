@@ -16,15 +16,16 @@ def safe_rephrase(template_output: str) -> str:
         return template_output
 
     prompt = (
-        f"Rephrase this casually in GenZ slang. Keep ALL numbers EXACTLY as written. "
-        f"Don't add new facts. One sentence only:\n\n\"{template_output}\""
+        f"Rephrase this in a warm, friendly, conversational tone for a college student. "
+        f"Keep ALL numbers, ₹ amounts and category names EXACTLY as written. Keep every fact, "
+        f"add no new ones, and keep it about the same length. Reply with the rephrased text only:\n\n\"{template_output}\""
     )
     try:
         completion = _client.chat_completion(
             messages=[{"role": "user", "content": prompt}],
             model="Qwen/Qwen2.5-7B-Instruct",
-            max_tokens=40,
-            temperature=0.8,
+            max_tokens=160,
+            temperature=0.6,
         )
         rephrased = completion.choices[0].message.content.strip()
     except Exception as e:
@@ -36,4 +37,4 @@ def safe_rephrase(template_output: str) -> str:
     if original_numbers != rephrased_numbers:
         return template_output
 
-    return rephrased
+    return rephrased.strip('"')

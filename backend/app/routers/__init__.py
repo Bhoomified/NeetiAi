@@ -143,42 +143,20 @@ def chat_endpoint(payload: ChatRequest, session: Session = Depends(get_session))
         raise HTTPException(status_code=404, detail="User not found")
 
     user_transactions = session.exec(select(Transaction).where(Transaction.user_id == payload.user_id)).all()
+    income = compute_income_breakdown(payload.user_id, session)
 
-    from app.ml_chatbot import predict_intent, extract_amount, extract_category, extract_timeframe
+    def forecast_fn():
+        return forecast_user(user_transactions) if user_transactions else None
 
-    intent, confidence = predict_intent(payload.message)
-    entities = {
-        "amount": extract_amount(payload.message),
-        "category": extract_category(payload.message),
-        "timeframe": extract_timeframe(payload.message),
-    }
+    def optimize_fn():
+        forecast = forecast_fn()
+        predicted_spend = {c["category"]: c["predicted_amount"] for c in (forecast or {}).get("categories", [])}
+        if not predicted_spend or not income["weekly_income"]:
+            return None
+        result, _ = optimize_budget(predicted_spend, income["weekly_income"], savings_target_pct=0.15)
+        return result
 
-    backend_data = None
-
-    if intent == "category_query" and entities["category"]:
-        cat_total = sum(t.amount for t in user_transactions if t.category == entities["category"])
-        backend_data = {"amount": cat_total, "category": entities["category"]}
-
-    elif intent == "spending_complaint" and entities["category"]:
-        cat_total = sum(t.amount for t in user_transactions if t.category == entities["category"])
-        backend_data = {"amount": cat_total, "category": entities["category"]}
-
-    elif intent == "savings_flex":
-        forecast = forecast_user(user_transactions)
-        predicted_spend = {c["category"]: c["predicted_amount"] for c in forecast["categories"]}
-        if predicted_spend:
-            weekly_income = compute_weekly_income(payload.user_id, session)
-            opt_result, _ = optimize_budget(predicted_spend, weekly_income, savings_target_pct=0.15)
-            if opt_result:
-                backend_data = {"amount": opt_result["projected_savings"]}
-
-    elif intent == "budget_help" and entities["category"]:
-        forecast = forecast_user(user_transactions)
-        cat_forecast = next((c for c in forecast["categories"] if c["category"] == entities["category"]), None)
-        if cat_forecast:
-            backend_data = {"amount": cat_forecast["predicted_amount"] * 0.8, "category": entities["category"]}
-
-    result = chatbot_chat(payload.message, backend_data=backend_data)
+    result = chatbot_chat(payload.message, user_transactions, income, forecast_fn, optimize_fn)
 
     session.add(ChatLog(user_id=payload.user_id, role="user", message=payload.message))
     session.add(ChatLog(user_id=payload.user_id, role="assistant", message=result["response"]))

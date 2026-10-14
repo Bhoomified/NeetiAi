@@ -1,0 +1,20 @@
+{
+  "trained_at": "2026-10-14T11:55:47",
+  "intents": [
+    "budget_help",
+    "category_query",
+    "forecast_query",
+    "help",
+    "income_query",
+    "investment_query",
+    "random_chat",
+    "savings_flex",
+    "spending_complaint",
+    "top_category",
+    "total_spend"
+  ],
+  "train_size": 3740,
+  "val_macro_f1": 0.9864,
+  "handwritten_macro_f1": 0.9437,
+  "handwritten_accuracy": 0.9474
+}

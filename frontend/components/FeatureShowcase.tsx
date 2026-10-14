@@ -1,3 +1,5 @@
+import Reveal from "./Reveal";
+
 const FEATURES = [
   { n: "01", title: "It sorts your spending", body: "Tell it what you bought — it figures out the category itself, learns from messy real transaction text.", tone: "olive" },
   { n: "02", title: "It sees next week coming", body: "Forecasts built on how you actually spend, not a generic template.", tone: "navy" },
@@ -23,10 +25,10 @@ export default function FeatureShowcase() {
         Five things it actually does for you
       </h2>
       <div className="space-y-5">
-        {FEATURES.map((f) => (
+        {FEATURES.map((f, i) => (
+          <Reveal key={f.n} delay={i * 90}>
           <div
-            key={f.n}
-            className="flex items-start gap-5 p-5 rounded-3xl glass border border-hairline
+            className="sheen flex items-start gap-5 p-5 rounded-3xl glass border border-hairline
                        hover:border-gold hover:-translate-y-0.5 transition-all duration-300 ease-out"
           >
             <span className={`shrink-0 w-11 h-11 rounded-full border flex items-center justify-center
@@ -38,6 +40,7 @@ export default function FeatureShowcase() {
               <p className="text-sm text-ink-soft leading-relaxed">{f.body}</p>
             </div>
           </div>
+          </Reveal>
         ))}
       </div>
     </div>

@@ -19,7 +19,7 @@ export default function NavigationBlocks() {
         <a
           key={b.title}
           href={b.href}
-          className={`group h-40 rounded-3xl border flex flex-col items-center justify-center text-center px-5
+          className={`sheen group h-40 rounded-3xl border flex flex-col items-center justify-center text-center px-5
                       hover:-translate-y-1 transition-all duration-300 ease-out ${TONE[b.tone]}`}
         >
           <span className="font-display text-3xl text-forest mb-2">{b.title}</span>

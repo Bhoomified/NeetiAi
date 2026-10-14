@@ -6,6 +6,7 @@ import PageBackground from "@/components/PageBackground";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import StackedHeading from "@/components/StackedHeading";
+import CountUp from "@/components/CountUp";
 
 type Transaction = {
   id: number;
@@ -369,7 +370,7 @@ export default function Dashboard() {
               <div className="glass-forest rounded-3xl p-6 text-base">
                 <p className="text-xs uppercase tracking-wide text-gold mb-2">Predicted total</p>
                 <p className="font-display text-4xl mb-1">
-                  ₹{forecast?.predicted_total?.toLocaleString() ?? "—"}
+                  {forecast?.predicted_total != null ? <CountUp value={forecast.predicted_total} prefix="₹" /> : "₹—"}
                 </p>
                 <p className="text-xs text-base/60">
                   {forecast?.total_method === "random_forest" ? "Model-based prediction" : "Based on recent average"}
