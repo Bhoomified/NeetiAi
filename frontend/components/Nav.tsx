@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
-  const { session, backendUser, signOut } = useAuth();
+  const { session, backendUser, backendStatus, retrySync, signOut } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 120);
@@ -46,6 +46,21 @@ export default function Nav() {
           </a>
         )}
       </div>
+
+      {session && backendStatus === "unreachable" && (
+        <div role="status" className="border-t border-rust/30 bg-paper">
+          <p className="max-w-6xl mx-auto px-6 sm:px-8 py-2 flex items-center gap-2 text-xs sm:text-sm text-rust">
+            <span className="text-gold" aria-hidden>●</span>
+            <span>Can&apos;t reach the NeetiAi server right now, so your numbers can&apos;t load.</span>
+            <button
+              onClick={retrySync}
+              className="ml-auto font-semibold underline underline-offset-4 decoration-gold hover:text-forest transition-colors duration-200 ease-out whitespace-nowrap"
+            >
+              Try again
+            </button>
+          </p>
+        </div>
+      )}
 
       <div
         className={`overflow-hidden transition-all duration-300 ease-out border-t border-hairline ${
